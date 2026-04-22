@@ -1,0 +1,44 @@
+<section class="section">
+  <div class="section__title">Стартап</div>
+
+  <div class="subtabs" role="tablist" aria-label="Стартап: разделы">
+    <a
+      class="subtab is-active"
+      href="{{ url_for('main.ui_tab', tab='startup') }}"
+      hx-get="{{ url_for('main.startup_section', section='rooms') }}"
+      hx-target="#startup-content"
+      hx-swap="innerHTML"
+    >
+      <span class="subtab__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7h18"></path>
+          <path d="M7 7v14"></path>
+          <path d="M17 7v14"></path>
+          <path d="M7 11h10"></path>
+          <path d="M7 15h10"></path>
+        </svg>
+      </span>
+      <span class="subtab__label">Комнаты</span>
+    </a>
+    <a
+      class="subtab"
+      href="{{ url_for('main.startup_section', section='growth') }}"
+      hx-get="{{ url_for('main.startup_section', section='growth') }}"
+      hx-target="#startup-content"
+      hx-swap="innerHTML"
+    >
+      <span class="subtab__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"></path>
+          <path d="M7 14l4-4 3 3 6-6"></path>
+        </svg>
+      </span>
+      <span class="subtab__label">Рост</span>
+    </a>
+  </div>
+
+  <div id="startup-content" class="startup-content">
+    {% include "partials/startup_rooms.html" %}
+  </div>
+</section>
+

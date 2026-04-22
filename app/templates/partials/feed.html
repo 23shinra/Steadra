@@ -1,0 +1,219 @@
+{% from "components/_icons.html" import icon %}
+<section class="section">
+  <div class="section__title">Прогресс стартапов</div>
+
+  <div class="feedTop">
+    <div class="feedFilters" role="tablist" aria-label="Feed filters">
+      <button class="pill is-active js-feed-filter" type="button" data-filter="all">Все</button>
+      <button class="pill js-feed-filter" type="button" data-filter="milestone">Вехи</button>
+      <button class="pill js-feed-filter" type="button" data-filter="revenue">Выручка</button>
+      <button class="pill js-feed-filter" type="button" data-filter="interview">Интервью</button>
+      <button class="pill js-feed-filter" type="button" data-filter="mvp">MVP</button>
+    </div>
+
+    <div class="feedSort">
+      <div class="feedSortMenu">
+        <button class="pill pill--sm js-feed-sort-toggle" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Сортировка">
+          <span class="feedSortMenu__ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h13"/>
+              <path d="M3 12h9"/>
+              <path d="M3 18h5"/>
+              <path d="m18 9 3-3-3-3"/>
+              <path d="M21 6H11"/>
+            </svg>
+          </span>
+          <span class="js-feed-sort-label">Сначала новые</span>
+          <span class="feedSortMenu__chev" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 10l4 4 4-4"/>
+            </svg>
+          </span>
+        </button>
+
+        <div class="feedSortMenu__panel" role="menu" hidden>
+          <button class="feedSortMenu__item is-active js-feed-sort" type="button" role="menuitem" data-sort="latest">Сначала новые</button>
+          <button class="feedSortMenu__item js-feed-sort" type="button" role="menuitem" data-sort="top">Топ по очкам</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feedTimeline js-feed" data-filter="all" data-sort="latest">
+    <div class="feedTimeline__line" aria-hidden="true"></div>
+
+    <div class="timelineItem js-feed-item" style="--i:0" data-type="milestone" data-xp="120" data-ts="1712445600" data-tags="mvp traction">
+      <div class="timelineItem__dot dot dot--milestone" aria-hidden="true">
+        <span class="dot__icon">{{ icon('rocket', 12) }}</span>
+      </div>
+
+      <article class="feedCard feedCard--milestone">
+        <header class="feedCard__head">
+          <div class="feedAvatar">ДК</div>
+          <div class="feedCard__who">
+            <div class="feedCard__name">Данияр Кайрат <span class="levelBadge">Уровень 2 • Фаундер</span></div>
+            <div class="feedCard__meta">Фаундер • KZ → EU</div>
+          </div>
+          <div class="xpBadge xpBadge--pulse" title="+очки">+120 очков</div>
+        </header>
+
+        <div class="feedCard__body">
+          Закрыл этап <span class="kw">MVP готов</span> и перешёл в <span class="kw">Рост</span>. Добавил онбординг и оплату, готовит публичный запуск.
+        </div>
+
+        <div class="feedCard__tags">
+          <span class="tag">Этап: MVP</span>
+          <span class="tag tag--accent">Рынок: EU</span>
+          <span class="achievementBadge">MVP готов</span>
+          <span class="streakBadge">Серия: 3 дня</span>
+        </div>
+
+        <footer class="feedCard__actions">
+          <button class="btn btn--secondary" type="button">Поздравить</button>
+          <button class="btn btn--ghost" type="button">Открыть</button>
+          <button class="btn btn--ghost" type="button">Написать</button>
+        </footer>
+      </article>
+    </div>
+
+    <div class="timelineItem js-feed-item" style="--i:1" data-type="completed" data-xp="80" data-ts="1712362800" data-tags="interview discovery">
+      <div class="timelineItem__dot dot dot--completed" aria-hidden="true">
+        <span class="dot__icon">{{ icon('check', 12) }}</span>
+      </div>
+
+      <article class="feedCard feedCard--completed">
+        <header class="feedCard__head">
+          <div class="feedAvatar">МТ</div>
+          <div class="feedCard__who">
+            <div class="feedCard__name">Мадина Т. <span class="levelBadge">Уровень 1 • Фаундер</span></div>
+            <div class="feedCard__meta">Фаундер • UAE</div>
+          </div>
+          <div class="xpBadge">+80 очков</div>
+        </header>
+
+        <div class="feedCard__body">
+          Провела <span class="kw">5 интервью</span>, уточнила <span class="kw">ICP</span> и сегменты. Сформировала топ‑10 болей и гипотез.
+        </div>
+
+        <div class="feedCard__tags">
+          <span class="tag tag--ok">Этап: Исследование</span>
+          <span class="tag">Сегмент: B2B услуги</span>
+          <span class="achievementBadge achievementBadge--ok">Первое интервью</span>
+        </div>
+
+        <footer class="feedCard__actions">
+          <button class="btn btn--secondary" type="button">Поздравить</button>
+          <button class="btn btn--ghost" type="button">Открыть</button>
+          <button class="btn btn--ghost" type="button">Написать</button>
+        </footer>
+      </article>
+    </div>
+
+    <div class="timelineItem js-feed-item" style="--i:2" data-type="revenue" data-xp="160" data-ts="1712276400" data-tags="revenue traction">
+      <div class="timelineItem__dot dot dot--revenue" aria-hidden="true">
+        <span class="dot__icon">{{ icon('banknote', 12) }}</span>
+      </div>
+
+      <article class="feedCard feedCard--revenue">
+        <header class="feedCard__head">
+          <div class="feedAvatar">АД</div>
+          <div class="feedCard__who">
+            <div class="feedCard__name">Amina D. <span class="levelBadge">Уровень 3 • Фаундер</span></div>
+            <div class="feedCard__meta">Со‑фаундер • Global</div>
+          </div>
+          <div class="xpBadge xpBadge--gold">+160 очков</div>
+        </header>
+
+        <div class="feedCard__body">
+          Получила <span class="kw">первую выручку</span> и подтвердила <span class="kw">unit economics</span> на пилоте. Закрыла 2 платных аккаунта.
+        </div>
+
+        <div class="feedCard__tags">
+          <span class="tag tag--gold">Этап: Рост</span>
+          <span class="tag tag--accent">Рынок: Global</span>
+          <span class="achievementBadge achievementBadge--gold">Первая выручка</span>
+        </div>
+
+        <footer class="feedCard__actions">
+          <button class="btn btn--secondary" type="button">Поздравить</button>
+          <button class="btn btn--ghost" type="button">Открыть</button>
+          <button class="btn btn--ghost" type="button">Написать</button>
+        </footer>
+      </article>
+    </div>
+
+    <div class="timelineItem js-feed-item" style="--i:3" data-type="activity" data-xp="55" data-ts="1712190000" data-tags="mvp activity">
+      <div class="timelineItem__dot dot dot--activity" aria-hidden="true">
+        <span class="dot__icon">{{ icon('activity', 12) }}</span>
+      </div>
+
+      <article class="feedCard feedCard--activity">
+        <header class="feedCard__head">
+          <div class="feedAvatar">ИН</div>
+          <div class="feedCard__who">
+            <div class="feedCard__name">Илья Н. <span class="levelBadge">Уровень 2 • Билдер</span></div>
+            <div class="feedCard__meta">Бэкенд • Global</div>
+          </div>
+          <div class="xpBadge">+55 очков</div>
+        </header>
+
+        <div class="feedCard__body">
+          Подключил оплату и вебхуки, закрыл прод‑баги. Собрал <span class="kw">release candidate</span> для MVP.
+        </div>
+
+        <div class="feedCard__tags">
+          <span class="tag">Этап: MVP</span>
+          <span class="tag">Сегмент: Fintech</span>
+          <span class="achievementBadge">MVP готов</span>
+        </div>
+
+        <footer class="feedCard__actions">
+          <button class="btn btn--secondary" type="button">Поздравить</button>
+          <button class="btn btn--ghost" type="button">Открыть</button>
+          <button class="btn btn--ghost" type="button">Написать</button>
+        </footer>
+      </article>
+    </div>
+
+    <div class="timelineItem js-feed-item" style="--i:4" data-type="milestone" data-xp="95" data-ts="1712103600" data-tags="interview milestone">
+      <div class="timelineItem__dot dot dot--milestone" aria-hidden="true">
+        <span class="dot__icon">{{ icon('rocket', 12) }}</span>
+      </div>
+
+      <article class="feedCard feedCard--milestone">
+        <header class="feedCard__head">
+          <div class="feedAvatar">ЕР</div>
+          <div class="feedCard__who">
+            <div class="feedCard__name">Ерасыл Р. <span class="levelBadge">Уровень 2 • Гроус</span></div>
+            <div class="feedCard__meta">Рост • EU</div>
+          </div>
+          <div class="xpBadge">+95 очков</div>
+        </header>
+
+        <div class="feedCard__body">
+          Запустил 2 канала: cold email + LinkedIn. Получил <span class="kw">14 ответов</span> и назначил <span class="kw">3 звонка</span>.
+        </div>
+
+        <div class="feedCard__tags">
+          <span class="tag">Этап: Исследование</span>
+          <span class="tag tag--accent">Рынок: EU</span>
+          <span class="achievementBadge">Первый клиент</span>
+        </div>
+
+        <footer class="feedCard__actions">
+          <button class="btn btn--secondary" type="button">Поздравить</button>
+          <button class="btn btn--ghost" type="button">Открыть</button>
+          <button class="btn btn--ghost" type="button">Написать</button>
+        </footer>
+      </article>
+    </div>
+
+    <div class="feedEmpty js-feed-empty" hidden>
+      <div class="empty">
+        <div class="empty__title">Нет событий по фильтру</div>
+        <div class="empty__note">Попробуй выбрать другой тип прогресса.</div>
+      </div>
+    </div>
+  </div>
+</section>
+

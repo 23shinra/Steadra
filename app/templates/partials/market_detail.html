@@ -1,0 +1,63 @@
+<section class="section">
+  <div class="section__title">Заказ</div>
+
+  <div class="card card--bento">
+    <div class="card__title">{{ order['title'] }}</div>
+
+    <div class="meta-row">
+      <span class="badge">{{ order['format']|upper }}</span>
+      <span class="badge badge--muted">{{ category_labels.get(order['category'], order['category']) }}</span>
+      <span class="dot">•</span>
+      <span class="meta">{{ 'Разовый' if order['duration']=='oneoff' else 'Долгосрочно' }}</span>
+    </div>
+
+    <div class="meta-row meta-row--sub">
+      {% if order['verified'] %}<span class="badge badge--ok">Проверено</span>{% endif %}
+      <span class="meta">{{ order['country'] }}</span>
+      <span class="dot">•</span>
+      <span class="meta">{{ order['language'] }}</span>
+      {% if order['budget'] %}
+        <span class="dot">•</span>
+        <span class="meta meta--strong">{{ order['budget'] }}</span>
+      {% endif %}
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card__body">
+      {{ order['description'] }}
+    </div>
+  </div>
+
+  <div class="card card--bento">
+    <div class="card__title">Заказчик</div>
+    <div class="card__body">
+      <div class="list">
+        <div class="list__item"><span>Статус</span> {{ 'Проверено' if order['verified'] else 'Обычный' }}</div>
+        <div class="list__item"><span>География</span> {{ order['country'] }}</div>
+        <div class="list__item"><span>Язык</span> {{ order['language'] }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <a
+      class="btn btn--ghost"
+      href="{{ url_for('main.ui_tab', tab='market') }}"
+      hx-get="{{ url_for('main.ui_tab', tab='market') }}"
+      hx-target="#app-content"
+      hx-push-url="true"
+      hx-swap="innerHTML"
+    >← Назад</a>
+
+    <a
+      class="btn btn--primary"
+      href="{{ url_for('main.market_apply', order_id=order['id']) }}"
+      hx-get="{{ url_for('main.market_apply', order_id=order['id']) }}"
+      hx-target="#app-content"
+      hx-push-url="true"
+      hx-swap="innerHTML"
+    >Откликнуться</a>
+  </div>
+</section>
+

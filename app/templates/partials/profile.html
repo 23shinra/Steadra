@@ -1,0 +1,292 @@
+{% from "components/_icons.html" import icon %}
+<section class="section">
+  <header class="pageHero">
+    <div class="pageHero__kicker">Профиль</div>
+    <h1 class="pageHero__title">Кабина фаундера</h1>
+    <p class="pageHero__meta">Профиль, прогресс по roadmap и рабочая зона для следующего шага.</p>
+    <div class="pageHero__stats">
+      <span class="pageHero__stat pageHero__stat--accent">Этап <b>Бета</b></span>
+      <span class="pageHero__stat">Репутация <b>812</b></span>
+      <span class="pageHero__stat">Roadmap <b>6/10</b></span>
+      <span class="pageHero__stat">Фокус недели <b>Интервью</b></span>
+    </div>
+  </header>
+
+  {% set full_name = (current_user.full_name if current_user and current_user.full_name else 'Пользователь') %}
+  {% set phone = (current_user.phone if current_user else '') %}
+  {% set skills_raw = (current_user.skills if current_user and current_user.skills else '') %}
+  {% set skills_list = (skills_raw.split(',') if skills_raw else []) %}
+  {% set initials = (full_name.split(' ')[0][:1] ~ (full_name.split(' ')[1][:1] if full_name.split(' ')|length > 1 else '')).upper() %}
+
+  <div class="profileDash">
+    <!-- 1) Hero Profile Card -->
+    <article class="profileHero card card--bento">
+      <div class="profileHero__glow" aria-hidden="true"></div>
+
+      <div class="profileHero__top">
+        <div class="profileHero__avatar" aria-label="Avatar">
+          <div class="profileHero__initials">{{ initials if initials else 'S' }}</div>
+          <div class="profileHero__ring" aria-hidden="true"></div>
+        </div>
+
+        <div class="profileHero__id">
+          <div class="profileHero__name">{{ full_name }}</div>
+          <div class="profileHero__role">Продуктовый фаундер</div>
+          <div class="profileHero__tagline">Строю B2B‑стартап • KZ → EU</div>
+          <div class="profileHero__sub">{{ phone }}</div>
+        </div>
+      </div>
+
+      <div class="profileBadges">
+        <span class="badgePill badgePill--stage">Этап: Бета</span>
+        <span class="badgePill badgePill--trust" title="Профиль подтверждён">Проверенный фаундер</span>
+        <span class="badgePill badgePill--open">Открыт к коллаборациям</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- 8) Quick Actions -->
+      <div class="profileActions">
+        <button class="btn btn--primary" type="button">Редактировать</button>
+        <a class="btn btn--secondary" href="/ui/chat">Открыть roadmap</a>
+        <button class="btn btn--ghost" type="button">Публичный профиль</button>
+        <button class="btn btn--ghost" type="button">Спросить AI</button>
+        <a class="btn btn--danger" href="{{ url_for('auth.logout') }}">Выйти</a>
+      </div>
+    </article>
+
+    <!-- 2) Прогресс фаундера / этап стартапа -->
+    <article class="founderProgress card card--bento">
+      <div class="founderProgress__head">
+        <div>
+          <div class="card__title">Прогресс фаундера</div>
+          <div class="card__meta">Этап + прогресс roadmap + фокус недели</div>
+        </div>
+        <span class="xpBadge xpBadge--pulse">Репутация +12</span>
+      </div>
+
+      {# C = 2*PI*r; r=42 → C≈263.89; pct 60% → offset ≈ 105.56 #}
+      <div class="founderProgress__ringWrap">
+        <div
+          class="ring"
+          data-ring-pct="60"
+          style="--ring-c: 263.89; --ring-offset: 105.56;"
+          aria-label="Прогресс дорожной карты: 60%"
+        >
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="ring__track" cx="50" cy="50" r="42" />
+            <circle class="ring__fill"  cx="50" cy="50" r="42" />
+          </svg>
+          <div class="ring__label">
+            <span class="ring__labelValue">6<span class="ring__labelSep">/</span>10</span>
+            <small>шагов</small>
+          </div>
+        </div>
+        <div class="founderProgress__ringText">
+          <h4>Этап: Бета</h4>
+          <p>24 задачи закрыто · 4 этапа до Роста. Дожмите 2 интервью и запуск канала на этой неделе.</p>
+        </div>
+      </div>
+
+      <div class="founderProgress__row">
+        <div class="progressMini">
+          <div class="progressMini__k">Этап</div>
+          <div class="progressMini__v">Бета</div>
+        </div>
+        <div class="progressMini">
+          <div class="progressMini__k">Дорожная карта</div>
+          <div class="progressMini__v">6/10 шагов</div>
+        </div>
+        <div class="progressMini">
+          <div class="progressMini__k">Completed</div>
+          <div class="progressMini__v" data-count-to="24" data-count-suffix=" tasks">0 tasks</div>
+        </div>
+      </div>
+
+      <div class="milestoneChips">
+        <span class="chip chip--ok" title="Проведены интервью">5 interviews</span>
+        <span class="chip" title="Сформирован оффер">Offer draft</span>
+        <span class="chip chip--accent" title="Запуск 2 каналов">2 channels</span>
+        <span class="chip" title="Лендинг">Landing</span>
+      </div>
+
+      <div class="focusTag">
+        <span class="focusTag__k">Текущий фокус</span>
+        <span class="focusTag__v">Интервью с клиентами и первый канал дистрибуции</span>
+      </div>
+    </article>
+
+    <!-- 3) Репутация / метрики -->
+    <article class="repStats card card--bento">
+      <div class="repStats__head">
+        <div class="card__title">Репутация</div>
+        <div class="card__meta">Сигналы доверия и готовности к сделкам</div>
+      </div>
+
+      <div class="repGrid">
+        <div class="repStat repStat--brand">
+          <div class="repStat__icon">{{ icon('sparkle', 16) }}</div>
+          <div class="repStat__v" data-count-to="812">0</div>
+          <div class="repStat__k">Скор репутации</div>
+        </div>
+        <div class="repStat repStat--ok">
+          <div class="repStat__icon">{{ icon('circle-check', 16) }}</div>
+          <div class="repStat__v" data-count-to="5">0</div>
+          <div class="repStat__k">Подтверждённые сделки</div>
+        </div>
+        <div class="repStat">
+          <div class="repStat__icon">{{ icon('layout-grid', 16) }}</div>
+          <div class="repStat__v" data-count-to="3">0</div>
+          <div class="repStat__k">Кейсы</div>
+        </div>
+        <div class="repStat">
+          <div class="repStat__icon">{{ icon('mic', 16) }}</div>
+          <div class="repStat__v" data-count-to="11">0</div>
+          <div class="repStat__k">Интервью</div>
+        </div>
+        <div class="repStat repStat--accent">
+          <div class="repStat__icon">{{ icon('users', 16) }}</div>
+          <div class="repStat__v" data-count-to="7">0</div>
+          <div class="repStat__k">Инвайты в команду</div>
+        </div>
+        <div class="repStat">
+          <div class="repStat__icon">{{ icon('reply', 16) }}</div>
+          <div class="repStat__v" data-count-to="82" data-count-suffix="%">0</div>
+          <div class="repStat__k">Ответы</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 4) Навыки + рынки + предпочтения -->
+    <article class="matchBlock card card--bento">
+      <div class="matchBlock__head">
+        <div class="card__title">Профиль и матчинги</div>
+        <div class="card__meta">Специализация, рынки и формат коллабораций</div>
+      </div>
+
+      <div class="matchGrid">
+        <div class="infoCard">
+          <div class="infoCard__k">Role</div>
+          <div class="infoCard__v">
+            <span class="pillTag">Продукт</span>
+            <span class="pillTag">Фаундер</span>
+          </div>
+        </div>
+
+        <div class="infoCard">
+          <div class="infoCard__k">Core skills</div>
+          <div class="infoCard__v">
+            {% set ns = namespace(shown=0) %}
+            {% for s in skills_list[:8] %}
+              {% if s|trim %}
+                <span class="pillTag pillTag--skill">{{ s|trim }}</span>
+                {% set ns.shown = ns.shown + 1 %}
+              {% endif %}
+            {% endfor %}
+            {% if ns.shown == 0 %}
+              <span class="pillTag pillTag--muted">Add skills</span>
+              <span class="pillTag pillTag--skill">Validation</span>
+              <span class="pillTag pillTag--skill">UX</span>
+              <span class="pillTag pillTag--skill">Sales</span>
+            {% else %}
+              {# ok #}
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="infoCard">
+          <div class="infoCard__k">Рынки</div>
+          <div class="infoCard__v">
+            <span class="pillTag">KZ</span>
+            <span class="pillTag">EU</span>
+          </div>
+        </div>
+
+        <div class="infoCard">
+          <div class="infoCard__k">Языки</div>
+          <div class="infoCard__v">
+            <span class="pillTag">RU</span>
+            <span class="pillTag">EN</span>
+          </div>
+        </div>
+
+        <div class="infoCard">
+          <div class="infoCard__k">Ищу</div>
+          <div class="infoCard__v">
+            <span class="pillTag pillTag--accent">Со‑фаундера</span>
+            <span class="pillTag pillTag--accent">Советника по росту</span>
+            <span class="pillTag pillTag--accent">Пилотных клиентов</span>
+          </div>
+        </div>
+
+        <div class="infoCard">
+          <div class="infoCard__k">Формат работы</div>
+          <div class="infoCard__v">
+            <span class="pillTag">Удалённо</span>
+            <span class="pillTag">Международно</span>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 5) Достижения -->
+    <article class="achievements card card--bento">
+      <div class="achievements__head">
+        <div class="card__title">Достижения</div>
+        <div class="card__meta">Доказательство прогресса и исполнения</div>
+      </div>
+
+      <div class="badgeGrid">
+        <div class="achBadge" title="Проведены первые интервью">
+          <div class="achBadge__icon">{{ icon('mic', 16) }}</div>
+          <div class="achBadge__t">Первое интервью</div>
+          <div class="achBadge__s">Сигнал исследования</div>
+        </div>
+        <div class="achBadge achBadge--ok" title="MVP доставлен пользователям">
+          <div class="achBadge__icon">{{ icon('circle-check', 16) }}</div>
+          <div class="achBadge__t">MVP готов</div>
+          <div class="achBadge__s">Умею доводить до релиза</div>
+        </div>
+        <div class="achBadge achBadge--gold" title="Получена первая выручка">
+          <div class="achBadge__icon">{{ icon('banknote', 16) }}</div>
+          <div class="achBadge__t">Первая выручка</div>
+          <div class="achBadge__s">Сигнал роста</div>
+        </div>
+        <div class="achBadge" title="Профиль подтверждён">
+          <div class="achBadge__icon">{{ icon('shield-check', 16) }}</div>
+          <div class="achBadge__t">Проверенный фаундер</div>
+          <div class="achBadge__s">Бейдж доверия</div>
+        </div>
+        <div class="achBadge achBadge--accent" title="Готов к кроссбордер коллаборациям">
+          <div class="achBadge__icon">{{ icon('globe', 16) }}</div>
+          <div class="achBadge__t">Готов к кроссбордеру</div>
+          <div class="achBadge__s">KZ → EU</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 7) Рекомендации AI -->
+    <article class="aiReco card card--bento card--glow">
+      <div class="aiReco__head">
+        <div class="card__title">Рекомендации AI</div>
+        <div class="card__meta">Следующие шаги для доверия и роста</div>
+      </div>
+
+      <div class="aiReco__grid">
+        <div class="aiTip">
+          <div class="aiTip__k">Усилить доверие</div>
+          <div class="aiTip__v">Добавь 2 кейса — это поднимет конверсию и отклики.</div>
+        </div>
+        <div class="aiTip">
+          <div class="aiTip__k">Уточнить оффер</div>
+          <div class="aiTip__v">Собери позиционирование в 1 фразу: ICP + боль + результат (EU).</div>
+        </div>
+        <div class="aiTip">
+          <div class="aiTip__k">Закрыть этап</div>
+          <div class="aiTip__v">Дожми 2 интервью и зафиксируй 1 эксперимент по каналу на этой неделе.</div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+

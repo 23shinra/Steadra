@@ -1,0 +1,53 @@
+<section class="section">
+  <div class="section__title">Новый заказ</div>
+
+  <form
+    class="form"
+    method="post"
+    action="{{ url_for('main.create_order') }}"
+    hx-post="{{ url_for('main.create_order') }}"
+    hx-target="#toast-root"
+    hx-swap="beforeend"
+  >
+    {{ form.hidden_tag() }}
+
+    <label class="field">
+      <div class="field__label">Заголовок</div>
+      {{ form.title(class_="input", placeholder="Например: Нужен маркетолог для запуска в EU") }}
+      {% if form.title.errors %}
+        <div class="field__error">{{ form.title.errors[0] }}</div>
+      {% endif %}
+    </label>
+
+    <div class="grid-2">
+      <label class="field">
+        <div class="field__label">Категория</div>
+        {{ form.category(class_="select") }}
+      </label>
+      <label class="field">
+        <div class="field__label">Формат</div>
+        {{ form.format(class_="select") }}
+      </label>
+    </div>
+
+    <label class="field">
+      <div class="field__label">Описание</div>
+      {{ form.description(class_="textarea", rows="6", placeholder="Что нужно сделать, критерии, сроки, бюджет (опционально)") }}
+    </label>
+
+    <div class="row">
+      <a
+        class="btn btn--ghost"
+        href="{{ url_for('main.ui_tab', tab='market') }}"
+        hx-get="{{ url_for('main.ui_tab', tab='market') }}"
+        hx-target="#app-content"
+        hx-push-url="true"
+        hx-swap="innerHTML"
+      >
+        ← Назад
+      </a>
+      <button class="btn btn--primary" type="submit">Создать (макет)</button>
+    </div>
+  </form>
+</section>
+

@@ -1,0 +1,28 @@
+<section class="section">
+  <div class="section__title">Вход</div>
+
+  <div class="card card--bento">
+    <form
+      class="form"
+      method="post"
+      action="{{ url_for('auth.submit_phone') }}"
+      hx-post="{{ url_for('auth.submit_phone') }}"
+      hx-target="#app-content"
+      hx-swap="innerHTML"
+    >
+      {{ form.hidden_tag() }}
+
+      <label class="field">
+        <div class="field__label">Номер телефона</div>
+        {{ form.phone(class_="input js-phone", placeholder="+7 (777) 000-00-00", inputmode="tel", autocomplete="tel") }}
+        {% if form.phone.errors %}
+          <div class="field__error">{{ form.phone.errors[0] }}</div>
+        {% endif %}
+      </label>
+
+      <button class="btn btn--primary" type="submit">Получить код</button>
+      <div class="card__meta">Тестовый код: <b>1234</b></div>
+    </form>
+  </div>
+</section>
+

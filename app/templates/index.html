@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% if active == 'feed' %}
+    {% include "partials/feed.html" %}
+  {% elif active == 'leaderboard' %}
+    {% include "partials/leaderboard.html" %}
+  {% elif active == 'market' %}
+    {% include "partials/market.html" %}
+  {% elif active == 'startup' %}
+    {% include "partials/startup.html" %}
+  {% elif active == 'chat' %}
+    {% include "partials/chat.html" %}
+  {% elif active == 'profile' %}
+    {% include "partials/profile.html" %}
+  {% else %}
+    {% include "partials/feed.html" %}
+  {% endif %}
+{% endblock %}
+

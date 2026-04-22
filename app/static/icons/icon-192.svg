@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="1" stop-color="#2de2e6"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="160" height="160" rx="44" fill="#0b1020"/>
+  <rect x="22" y="22" width="148" height="148" rx="40" fill="url(#g)" opacity="0.22"/>
+  <rect x="28" y="28" width="136" height="136" rx="36" fill="#111a33" stroke="rgba(255,255,255,0.14)"/>
+  <text x="96" y="112" text-anchor="middle" font-size="54" font-family="system-ui,Segoe UI,Roboto,Arial" font-weight="800" fill="url(#g)">GVH</text>
+</svg>
+

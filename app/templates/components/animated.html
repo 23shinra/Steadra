@@ -1,0 +1,15 @@
+{# Reusable animated wrapper (FadeInSection / AnimatedBlock) #}
+{% macro AnimatedBlock(tag='div', class_='', delay=None, direction='up', duration=None, once=True, attrs='') -%}
+  <{{ tag }}
+    class="reveal {{ class_ }}"
+    data-reveal="1"
+    data-reveal-dir="{{ direction }}"
+    data-reveal-once="{{ '1' if once else '0' }}"
+    {% if delay is not none %}style="--reveal-delay: {{ delay }}ms;{% if duration is not none %} --reveal-duration: {{ duration }}ms;{% endif %}"{% endif %}
+    {% if delay is none and duration is not none %}style="--reveal-duration: {{ duration }}ms"{% endif %}
+    {{ attrs|safe }}
+  >
+    {{ caller() }}
+  </{{ tag }}>
+{%- endmacro %}
+

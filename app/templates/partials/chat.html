@@ -1,0 +1,117 @@
+<section class="section">
+  <div class="section__title">Рост проекта</div>
+
+  {% set steps = [
+    {'id':1, 'title':'Идея сформулирована', 'status':'completed', 'note':'Сформулирован problem statement', 'detail':'Собрали 3 гипотезы ценности и сегменты аудитории.'},
+    {'id':2, 'title':'Определён ICP', 'status':'completed', 'note':'Выбран 1 основной сегмент', 'detail':'Зафиксировали ICP: роль, контекст, триггер, бюджет.'},
+    {'id':3, 'title':'Проведены интервью', 'status':'active', 'note':'5 custdev интервью', 'detail':'Подтверждена основная боль и критерии выбора решения.'},
+    {'id':4, 'title':'Сформирован оффер', 'status':'pending', 'note':'Черновик оффера', 'detail':'Собрать 3 варианта: core value + proof + pricing anchor.'},
+    {'id':5, 'title':'Собран лендинг', 'status':'pending', 'note':'Структура секций', 'detail':'Сделать 1 экранный лендинг + форма лидов + FAQ.'},
+    {'id':6, 'title':'Получены первые лиды', 'status':'pending', 'note':'Цель: 20 лидов', 'detail':'Запустить 2 канала и зафиксировать CPL/CR.'},
+    {'id':7, 'title':'Проведены первые продажи', 'status':'pending', 'note':'Первые оплаты', 'detail':'Скрипт продаж + пакет предложений + условия пилота.'},
+    {'id':8, 'title':'Найден канал роста', 'status':'pending', 'note':'1 стабильный канал', 'detail':'Повторяемый канал с предсказуемым входом.'},
+    {'id':9, 'title':'Оптимизирована конверсия', 'status':'pending', 'note':'A/B итерации', 'detail':'Улучшить CR на лендинге/в оплате, убрать фрикцию.'},
+    {'id':10, 'title':'Подготовка к масштабированию', 'status':'pending', 'note':'План на 30 дней', 'detail':'Процессы, аналитика, найм, бюджетирование.'},
+  ] %}
+
+  <div class="roadmap card card--bento is-collapsed js-roadmap" data-collapsed="1">
+    <button class="roadmap__head js-roadmap-toggle" type="button" aria-expanded="false">
+      <div>
+        <div class="roadmap__title">Этапы роста проекта</div>
+        <div class="roadmap__meta">
+          <span class="roadmap__metaStrong">Сейчас:</span>
+          <span class="js-roadmap-activeTitle">Проведены интервью</span>
+          <span class="roadmap__sep">•</span>
+          <span class="js-roadmap-progress">2/10</span>
+        </div>
+      </div>
+      <span class="roadmap__chev" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M9 6l6 6-6 6" stroke="rgba(233,236,246,.92)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+    </button>
+
+    <div class="roadmap__progressBar js-roadmap-progressBar" aria-hidden="true"><span style="--p: 0%"></span></div>
+
+    <div class="roadmap__grid" aria-hidden="true">
+      <div class="roadmap__list" role="list">
+        {% for s in steps %}
+          <button
+            type="button"
+            class="step step--{{ s.status }} js-step"
+            data-step-id="{{ s.id }}"
+            data-title="{{ s.title }}"
+            data-note="{{ s.note }}"
+            data-detail="{{ s.detail }}"
+          >
+            <span class="step__rail" aria-hidden="true"></span>
+            <span class="step__icon" aria-hidden="true">
+              {% if s.status == 'completed' %}
+                ✓
+              {% elif s.status == 'active' %}
+                ●
+              {% else %}
+                ○
+              {% endif %}
+            </span>
+            <span class="step__body">
+              <span class="step__title">{{ s.id }}. {{ s.title }}</span>
+              <span class="step__note">{{ s.note }}</span>
+            </span>
+            <span class="step__tooltip" aria-hidden="true">
+              <span class="step__tooltipTitle">{{ s.title }}</span>
+              <span class="step__tooltipBody">{{ s.detail }}</span>
+            </span>
+          </button>
+        {% endfor %}
+      </div>
+
+      <div class="roadmap__details card card--bento card--glow" id="step-details">
+        <div class="details__kicker">Детали этапа</div>
+        <div class="details__title">Проведены интервью</div>
+        <div class="details__note">5 custdev интервью</div>
+        <div class="divider"></div>
+        <div class="details__body">
+          Подтверждена основная боль и критерии выбора решения.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chatWrap">
+    <div class="chatHint">Спроси AI, что делать на следующем этапе</div>
+    <div class="card card--bento chat chat--secondary">
+      <div class="chat__messages" id="ai-messages">
+        <div class="msg msg--ai">
+          <div class="msg__bubble">
+            Привет! Я AI‑ассистент Steadra. Чем помочь по текущему этапу?
+          </div>
+        </div>
+        <div class="msg msg--user">
+          <div class="msg__bubble">
+            Подскажи, какие 3 шага ускорят рост стартапа на этом этапе?
+          </div>
+        </div>
+        <div class="msg msg--ai">
+          <div class="msg__bubble">
+            1) Сформулировать ICP и 5 интервью. 2) Уточнить оффер и собрать лендинг. 3) Запустить 2 канала с короткими итерациями.
+          </div>
+        </div>
+      </div>
+
+      <div class="quickActions">
+        <button class="btn btn--secondary js-quick" type="button" data-q="Что делать дальше?">Что делать дальше?</button>
+        <button class="btn btn--secondary js-quick" type="button" data-q="Как закрыть текущий этап?">Как закрыть этот этап?</button>
+        <button class="btn btn--secondary js-quick" type="button" data-q="Какие ошибки тут бывают?">Какие ошибки тут бывают?</button>
+        <button class="btn btn--secondary js-quick" type="button" data-q="Составь план на 7 дней">План на 7 дней</button>
+      </div>
+
+      <form class="chat__composer js-chat-composer">
+        <input class="input js-chat-input" placeholder="Напиши сообщение…" autocomplete="off" />
+        <button class="btn btn--primary" type="submit">Отправить</button>
+      </form>
+    </div>
+  </div>
+</section>
+

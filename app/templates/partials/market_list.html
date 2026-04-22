@@ -1,0 +1,62 @@
+{% if orders|length == 0 %}
+  <div class="empty">
+    <div class="empty__title">Ничего не найдено</div>
+    <div class="empty__body">Попробуйте изменить фильтры или очистить поиск.</div>
+    <div class="empty__actions">
+      <a
+        class="btn btn--secondary"
+        href="{{ url_for('main.ui_tab', tab='market') }}"
+        hx-get="{{ url_for('main.ui_tab', tab='market') }}"
+        hx-target="#app-content"
+        hx-push-url="true"
+        hx-swap="innerHTML"
+      >Сбросить фильтры</a>
+    </div>
+  </div>
+{% else %}
+  <div class="cards">
+    {% for o in orders %}
+      <article class="card card--clickable">
+        <a
+          class="card__link"
+          href="{{ url_for('main.market_detail', order_id=o['id']) }}"
+          hx-get="{{ url_for('main.market_detail', order_id=o['id']) }}"
+          hx-target="#app-content"
+          hx-push-url="true"
+          hx-swap="innerHTML"
+        >
+          <div class="card__title">{{ o['title'] }}</div>
+          <div class="meta-row">
+            <span class="badge">{{ o['format']|upper }}</span>
+            <span class="badge badge--muted">{{ category_labels.get(o['category'], o['category']) }}</span>
+            <span class="dot">•</span>
+            <span class="meta">{{ 'Разовый' if o['duration']=='oneoff' else 'Долгосрочно' }}</span>
+          </div>
+          <div class="meta-row meta-row--sub">
+            {% if o['verified'] %}<span class="badge badge--ok">Проверено</span>{% endif %}
+            <span class="meta">{{ o['country'] }}</span>
+            <span class="dot">•</span>
+            <span class="meta">{{ o['language'] }}</span>
+            {% if o['budget'] %}
+              <span class="dot">•</span>
+              <span class="meta meta--strong">{{ o['budget'] }}</span>
+            {% endif %}
+          </div>
+          <div class="card__body">{{ o['description'] }}</div>
+        </a>
+        <div class="card__footer">
+          <a
+            class="btn btn--secondary"
+            href="{{ url_for('main.market_apply', order_id=o['id']) }}"
+            hx-get="{{ url_for('main.market_apply', order_id=o['id']) }}"
+            hx-target="#app-content"
+            hx-push-url="true"
+            hx-swap="innerHTML"
+          >Откликнуться</a>
+          <button class="btn btn--ghost" type="button">Сохранить</button>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% endif %}
+
