@@ -1,4 +1,6 @@
-from flask import Flask
+from urllib.parse import urlsplit, urlunsplit
+
+from flask import Flask, redirect, request
 from flask_migrate import Migrate
 from flask_wtf import CSRFProtect
 
@@ -14,6 +16,17 @@ migrate = Migrate()
 def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(config_class)
+
+    @app.before_request
+    def canonicalize_host():
+        # Trailing dot in host (e.g. "kangaroo.esl.kz.") breaks cookies/CSRF in practice
+        # when users bounce between dotted/undotted hostnames.
+        host = (request.host or "").strip()
+        if host.endswith("."):
+            new_host = host.rstrip(".")
+            parts = urlsplit(request.url)
+            new_url = urlunsplit((parts.scheme, new_host, parts.path, parts.query, parts.fragment))
+            return redirect(new_url, code=308)
 
     db.init_app(app)
     csrf.init_app(app)
