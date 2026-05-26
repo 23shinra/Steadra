@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Прогресс · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg progress-page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="flash flash-{{ category }}">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+  {% if roadmap_rebuilt %}
+    <p class="flash flash-success">Карта перестроена AI — теперь персональные шаги.</p>
+  {% endif %}
+  <header class="page-title progress-page__head">
+    <a class="back-link" href="{{ url_for('main.home') }}">← Главная</a>
+    <p class="eyebrow">Путь к деньгам</p>
+    {% if progress_startup %}
+    <h1>{{ progress_startup.name }}</h1>
+    <p class="muted">{{ progress_startup.tagline }}{% if progress %} · {{ progress.total }} шагов от AI{% endif %}</p>
+    <div class="progress-page__bar">
+      <div class="progress-page__fill" style="width: {{ progress.percent }}%"></div>
+    </div>
+    <p class="progress-page__meta">
+      {% if progress.finished %}
+        <strong>Ветка пройдена</strong> · 100%
+      {% else %}
+        <strong>{{ progress.done }}</strong> из <strong>{{ progress.total }}</strong> · {{ progress.percent }}%
+      {% endif %}
+    </p>
+    {% else %}
+    <h1>Прогресс проекта</h1>
+    <p class="muted">Сначала запусти идею в чате с личным помощником.</p>
+    {% endif %}
+  </header>
+
+  {% if progress_startup and current_step %}
+  <article class="progress-current card">
+    <p class="eyebrow">Текущий шаг</p>
+    <h2>{{ current_step.label }}</h2>
+    <p class="muted">{{ current_step.hint }}</p>
+    {% if days_on_step is not none %}
+    <p class="progress-current__days{% if days_on_step > 3 %} is-warn{% endif %}">{{ days_on_step }} дн. на этом шаге</p>
+    {% endif %}
+    {% include "partials/step_goals.html" %}
+
+    {% include "partials/progress_step_tools.html" %}
+
+    {% if pending_validation %}
+    <article class="progress-validation card">
+      {% if pending_validation.status == 'pending_admin' %}
+      <p class="flash flash-success">AI одобрил отчёт ({{ pending_validation.ai_confidence }}%). Ждём личного подтверждения админа.</p>
+      {% if pending_validation.ai_verdict %}<p class="muted">{{ pending_validation.ai_verdict }}</p>{% endif %}
+      {% else %}
+      <p class="flash flash-info">Отчёт на AI-проверке…</p>
+      {% endif %}
+    </article>
+    {% elif last_validation and last_validation.status == 'ai_rejected' %}
+    <article class="progress-validation card">
+      <p class="flash flash-error">AI не принял прошлый отчёт</p>
+      <p class="muted">{{ last_validation.ai_feedback }}</p>
+    </article>
+    {% elif last_validation and last_validation.status == 'admin_rejected' %}
+    <article class="progress-validation card">
+      <p class="flash flash-error">Админ вернул на доработку</p>
+      <p class="muted">{{ last_validation.admin_notes or last_validation.ai_feedback }}</p>
+    </article>
+    {% endif %}
+
+    {% if not pending_validation or pending_validation.status in ['ai_rejected', 'admin_rejected'] %}
+    <p class="hint">Отчёт на проверку отправляется только в <a href="{{ url_for('main.ai', thread=thread.id) if thread else url_for('main.ai') }}">AI-чате</a> проекта — форма «Отчёт на проверку» под перепиской.</p>
+    {% endif %}
+  </article>
+  {% elif progress_startup and progress.finished %}
+  <article class="progress-current card progress-current--done">
+    <p class="eyebrow">Финал</p>
+    <h2>Ветка пройдена</h2>
+    <p class="muted">Все шаги до денег закрыты. Поделись результатом в ленте.</p>
+    <a class="btn btn-primary full" href="{{ url_for('main.feed', compose=1) }}">Написать апдейт</a>
+  </article>
+  {% endif %}
+
+  {% if partners %}
+  <section class="card stack">
+    <h2>Партнёры для шага</h2>
+    {% for p in partners %}
+    <article>
+      <strong>{{ p.name }}</strong>
+      <p class="muted">{{ p.description }}</p>
+      {% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">Подробнее</a>{% endif %}
+    </article>
+    {% endfor %}
+    <a class="btn btn-ghost" href="{{ url_for('extensions.partners_page') }}">Все партнёры</a>
+  </section>
+  {% endif %}
+
+  {% if user_startups|length > 1 %}
+  <div class="startup-switcher">
+    {% for s in user_startups %}
+    <a href="{{ url_for('main.progress_page', startup=s.id) }}" class="chip {% if progress_startup and progress_startup.id == s.id %}is-active{% endif %}">{{ s.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if progress_startup and map_nodes %}
+    {% include "partials/roadmap_map.html" %}
+    <form class="stack" method="post" action="{{ url_for('main.progress_rebuild') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="startup_id" value="{{ progress_startup.id }}" />
+      <button type="submit" class="btn btn-ghost full">Перестроить карту AI</button>
+    </form>
+    <a class="btn btn-primary full" href="{% if thread %}{{ url_for('main.ai', thread=thread.id) }}{% else %}{{ url_for('main.ai') }}{% endif %}">Продолжить в чате</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.one_pager', startup_id=progress_startup.id) }}">One-pager для инвестора</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_pre', startup_id=progress_startup.id) }}">Pre-MVP deck</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_validated', startup_id=progress_startup.id) }}">Validated deck</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_analyze', startup_id=progress_startup.id) }}">Анализ питча</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.finmodel_page', startup_id=progress_startup.id) }}">Финмодель B2B/B2C</a>
+  {% else %}
+    <article class="empty-card">
+      <strong>Пока нет ветки</strong>
+      <p>Опиши идею, получи прожарку и нажми «Запустить путь».</p>
+      <a class="btn btn-primary full" href="{{ url_for('main.ai', onboarding=1) }}">Открыть чат</a>
+    </article>
+  {% endif %}
+</section>
+{% endblock %}

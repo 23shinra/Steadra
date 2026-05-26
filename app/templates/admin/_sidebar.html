@@ -1,0 +1,52 @@
+<aside class="admin-sidebar" id="admin-sidebar" aria-label="Навигация админки">
+  <div class="admin-sidebar__head">
+    <a class="admin-sidebar__logo" href="{{ url_for('admin.dashboard') }}" title="Панель" aria-label="На главную админки">A</a>
+    <strong class="admin-sidebar__title">Kangaroo</strong>
+    <button type="button" class="admin-sidebar__collapse" id="admin-sidebar-collapse" title="Свернуть меню" aria-label="Свернуть меню" aria-expanded="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+  </div>
+
+  <nav class="admin-sidebar__nav">
+    <a class="admin-sidebar__item{% if admin_nav == 'dashboard' %} is-active{% endif %}"
+      href="{{ url_for('admin.dashboard') }}"
+      title="Панель">
+      <span class="admin-sidebar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 4h7v9H4V4zm9 0h7v5h-7V4zM4 15h7v5H4v-5zm9 3h7v7h-7v-7z"/></svg>
+      </span>
+      <span class="admin-sidebar__label">Панель</span>
+    </a>
+
+    <a class="admin-sidebar__item{% if admin_nav == 'validation' %} is-active{% endif %}"
+      href="{{ url_for('admin.validation_page') }}"
+      title="Валидация шагов">
+      <span class="admin-sidebar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </span>
+      <span class="admin-sidebar__label">Шаги</span>
+      {% if pending_count %}<span class="admin-sidebar__badge">{{ pending_count }}</span>{% endif %}
+    </a>
+
+    <a class="admin-sidebar__item{% if admin_nav == 'validation_too' %} is-active{% endif %}"
+      href="{{ url_for('admin.validation_too_page') }}"
+      title="Валидация ТОО">
+      <span class="admin-sidebar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v0"/><path d="M9 12v0"/><path d="M9 15v0"/><path d="M9 18v0"/></svg>
+      </span>
+      <span class="admin-sidebar__label">ТОО</span>
+      {% if pending_too_count %}<span class="admin-sidebar__badge">{{ pending_too_count }}</span>{% endif %}
+    </a>
+  </nav>
+
+  <div class="admin-sidebar__foot">
+    <form method="post" action="{{ url_for('admin.logout') }}" class="admin-sidebar__logout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button type="submit" class="admin-sidebar__item" title="Выйти">
+        <span class="admin-sidebar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        </span>
+        <span class="admin-sidebar__label">Выйти</span>
+      </button>
+    </form>
+  </div>
+</aside>

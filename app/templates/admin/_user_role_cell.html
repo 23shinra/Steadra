@@ -1,0 +1,31 @@
+<form class="admin-role-form admin-role-form--stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <select
+    name="account_type"
+    aria-label="Тип аккаунта"
+    hx-post="{{ url_for('admin.set_user_role', user_id=user.id) }}"
+    hx-trigger="change"
+    hx-target="#user-role-{{ user.id }}"
+    hx-swap="innerHTML"
+    hx-include="closest form"
+  >
+    {% for item in account_types %}
+    <option value="{{ item.id }}" {% if user.account_type == item.id %}selected{% endif %}>{{ item.label }}</option>
+    {% endfor %}
+  </select>
+  {% if user.account_type != 'investor' %}
+  <select
+    name="founder_role"
+    aria-label="Роль основателя"
+    hx-post="{{ url_for('admin.set_user_founder_role', user_id=user.id) }}"
+    hx-trigger="change"
+    hx-target="#user-role-{{ user.id }}"
+    hx-swap="innerHTML"
+    hx-include="closest form"
+  >
+    {% for role in founder_roles %}
+    <option value="{{ role.label }}" {% if user.role|user_role == role.label %}selected{% endif %}>{{ role.label }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+</form>

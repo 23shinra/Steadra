@@ -1,0 +1,11 @@
+{% for thread in threads %}
+  <a
+    class="chat-thread-item {% if active_thread and thread.id == active_thread.id %}is-active{% endif %}"
+    href="{{ url_for('main.ai', thread=thread.id) }}"
+  >
+    <span class="chat-thread-item__title">{{ thread.title }}</span>
+    <span class="chat-thread-item__meta">{{ thread.updated_at.strftime("%d.%m") }}</span>
+  </a>
+{% else %}
+  <p class="chat-sidebar__empty">Пока нет диалогов</p>
+{% endfor %}

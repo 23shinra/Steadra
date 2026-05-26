@@ -1,0 +1,11 @@
+<section class="screen stack-lg">
+  <header class="page-title"><h1>Партнёры KZ</h1></header>
+  {% for p in partners %}
+  <article class="card">
+    <strong>{{ p.name }}</strong>
+    <span class="chip">{{ p.category }}</span>
+    <p class="muted">{{ p.description }}</p>
+    {% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">Сайт</a>{% endif %}
+  </article>
+  {% endfor %}
+</section>

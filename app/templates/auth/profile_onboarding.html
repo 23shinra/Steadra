@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "components/_role_icon.html" import role_icon %}
+{% block title %}Профиль · Kangaroo{% endblock %}
+{% block content %}
+<section class="auth-screen onboarding-profile">
+  <div class="auth-card">
+    <div class="logo-orb">K</div>
+    <p class="eyebrow">Шаг 1 из 1</p>
+    <h1>Расскажи о себе</h1>
+    <p class="muted">Это поможет AI и командам точнее разбирать твои стартап-идеи.</p>
+
+    <form class="stack profile-form" method="post" action="{{ url_for('auth.profile_onboarding_submit') }}" id="onboarding-form">
+      {{ form.csrf_token }}
+
+      <div class="field">
+        <span>{{ form.name.label.text }}</span>
+        {{ form.name(class_="input", placeholder="Как тебя зовут?", autocomplete="name") }}
+        {% if form.name.errors %}<p class="form-error">{{ form.name.errors[0] }}</p>{% endif %}
+      </div>
+
+      <div class="field">
+        <span>{{ form.age.label.text }}</span>
+        {{ form.age(class_="input", placeholder="25", inputmode="numeric", min="14", max="99") }}
+        {% if form.age.errors %}<p class="form-error">{{ form.age.errors[0] }}</p>{% endif %}
+      </div>
+
+      {% if not is_investor_user|default(false) %}
+      <div class="field">
+        <span>Тип аккаунта</span>
+        {{ form.account_type(class_="input", id="account-type-select") }}
+      </div>
+      {% else %}
+      <input type="hidden" name="account_type" value="investor" />
+      {% endif %}
+
+      <div class="field">
+        <span>{{ form.region.label.text }}</span>
+        {{ form.region(class_="input") }}
+      </div>
+
+      <div class="field investor-fields" id="investor-fields" {% if not is_investor_user %}hidden{% endif %}>
+        <span>{{ form.investor_invite_code.label.text }}</span>
+        {{ form.investor_invite_code(class_="input", placeholder="INVEST2026") }}
+        {% if form.investor_invite_code.errors %}<p class="form-error">{{ form.investor_invite_code.errors[0] }}</p>{% endif %}
+        {{ form.investor_fund_name(class_="input", placeholder="Фонд / компания") }}
+        {{ form.investor_linkedin(class_="input", placeholder="LinkedIn URL") }}
+      </div>
+
+      <div class="field founder-fields" id="founder-fields" {% if is_investor_user|default(false) %}hidden{% endif %}>
+        <span>Основная сфера</span>
+        <div class="role-grid role-grid-compact">
+          {% for role in roles %}
+          <label class="role-card {% if form.role.data == role.id %}is-selected{% endif %}">
+            <input type="radio" name="role" value="{{ role.id }}" {% if form.role.data == role.id %}checked{% endif %} />
+            <span class="role-card__icon">{{ role_icon(role.icon) }}</span>
+            <strong>{{ role.label }}</strong>
+          </label>
+          {% endfor %}
+        </div>
+        {% if form.role.errors %}<p class="form-error">{{ form.role.errors[0] }}</p>{% endif %}
+      </div>
+
+      <div class="field founder-fields" id="founder-exp" {% if is_investor_user|default(false) %}hidden{% endif %}>
+        <span>{{ form.experience_years.label.text }}</span>
+        {{ form.experience_years(class_="input") }}
+        {% if form.experience_years.errors %}<p class="form-error">{{ form.experience_years.errors[0] }}</p>{% endif %}
+      </div>
+
+      <div class="field founder-fields" id="founder-exp-text" {% if is_investor_user|default(false) %}hidden{% endif %}>
+        <span>{{ form.experience_text.label.text }}</span>
+        {{ form.experience_text(class_="textarea", rows="4", placeholder="Например: 3 года во фронтенде...") }}
+        {% if form.experience_text.errors %}<p class="form-error">{{ form.experience_text.errors[0] }}</p>{% endif %}
+      </div>
+
+      <button class="btn btn-primary full" type="submit">Войти в Kangaroo</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+{% block page_scripts %}
+<script>
+document.getElementById('account-type-select')?.addEventListener('change', function() {
+  const isInvestor = this.value === 'investor';
+  document.querySelectorAll('.founder-fields').forEach(el => el.hidden = isInvestor);
+  document.getElementById('investor-fields').hidden = !isInvestor;
+});
+</script>
+{% endblock %}

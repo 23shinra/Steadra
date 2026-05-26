@@ -1,0 +1,31 @@
+{% if weekly_goals %}
+<section class="step-goals card" id="step-goals">
+  <div class="section-head">
+    <h2>Задачи на неделю</h2>
+    <span class="muted">{{ weekly_goals.done }}/{{ weekly_goals.total }}</span>
+  </div>
+  <ul class="step-goals__list">
+    {% for goal in weekly_goals.goals %}
+    <li class="step-goals__item{% if goal.done %} is-done{% endif %}">
+      <form
+        method="post"
+        action="{{ url_for('main.progress_goal_toggle', goal_id=goal.id) }}"
+        hx-post="{{ url_for('main.progress_goal_toggle', goal_id=goal.id) }}"
+        hx-target="#step-goals"
+        hx-swap="outerHTML"
+      >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="startup_id" value="{{ progress_startup.id }}" />
+        <button type="submit" class="step-goals__toggle" aria-pressed="{{ 'true' if goal.done else 'false' }}">
+          <span class="step-goals__box" aria-hidden="true"></span>
+          <span>{{ goal.label }}</span>
+        </button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if weekly_goals.all_done %}
+  <p class="step-goals__nudge muted">Все задачи закрыты — готов отметить шаг выполненным?</p>
+  {% endif %}
+</section>
+{% endif %}

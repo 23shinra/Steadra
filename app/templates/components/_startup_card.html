@@ -1,0 +1,17 @@
+{% macro startup_card(startup, show_owner=false, href=none) %}
+<a class="startup-card card-link" href="{{ href or url_for('main.startup_detail', startup_id=startup.id) }}">
+  <div class="startup-card__main">
+    <p class="eyebrow">{{ startup.stage }}</p>
+    <h2>{{ startup.name }}</h2>
+    <p>{{ startup.tagline }}</p>
+    {% if show_owner and startup.owner %}
+    <small>{{ startup.owner.name }} · {{ startup.owner.role|user_role }}</small>
+    {% endif %}
+  </div>
+  <div class="startup-card__metrics">
+    <div class="metric-pill"><strong>{{ startup.health }}</strong><span>health</span></div>
+    <div class="metric-pill"><strong>{{ startup.traction }}</strong><span>traction</span></div>
+    <span class="card-arrow">→</span>
+  </div>
+</a>
+{% endmacro %}

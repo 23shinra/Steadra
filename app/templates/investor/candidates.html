@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% block title %}{{ page_title }} · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg investor-page">
+  <header class="page-title">
+    <p class="eyebrow">Инвестор</p>
+    <h1>{{ page_title }}</h1>
+    <p class="muted">{{ page_hint }}</p>
+  </header>
+
+  {% if not candidates %}
+  <article class="card investor-empty">
+    <p>{% if active_tab == 'favorites' %}В избранном пока пусто. Отметьте кандидата звёздочкой в списке или карточке.{% else %}Пока нет проектов для просмотра.{% endif %}</p>
+  </article>
+  {% else %}
+  <div class="investor-list">
+    {% for row in candidates %}
+    <article class="investor-card-wrap">
+      <a class="investor-card" href="{{ url_for('investor.candidate_detail', startup_id=row.startup.id) }}">
+        <div class="investor-card__head">
+          <div>
+            <h2>{{ row.startup.name }}</h2>
+            <p class="muted">{{ row.startup.tagline }}</p>
+          </div>
+          {{ too_badge(row.too) }}
+        </div>
+        <div class="investor-card__meta">
+          <span>{{ row.owner.name }}</span>
+          <span>{{ row.team.count }} чел.</span>
+          <span>{{ row.progress.done }}/{{ row.progress.total }} · {{ row.progress.percent }}%</span>
+        </div>
+        <div class="investor-card__pace">
+          {% if row.pace %}
+          <span>Средний темп: {{ row.pace.avg_days }} дн./шаг</span>
+          {% if row.total_completed_days %}
+          <span>· {{ row.total_completed_days }} дн. всего</span>
+          {% endif %}
+          {% elif row.current_step_days is not none %}
+          <span>На текущем шаге: {{ row.current_step_days }} дн.</span>
+          {% else %}
+          <span>Темп пока неизвестен</span>
+          {% endif %}
+        </div>
+      </a>
+      {% with startup=row.startup, is_favorite=row.is_favorite %}
+        {% include "partials/investor_favorite_button.html" %}
+      {% endwith %}
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

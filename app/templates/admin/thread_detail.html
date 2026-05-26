@@ -1,0 +1,55 @@
+{% extends "admin/base_admin.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% block title %}{{ thread.title }} · AI-чат · Admin{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title admin-page__head">
+    <div>
+      <a class="back-link" href="{{ url_for('admin.user_detail', user_id=user.id) }}">← {{ user.name }}</a>
+      <p class="eyebrow">AI-чат #{{ thread.id }}</p>
+      <h1>{{ thread.title }}</h1>
+      <p class="muted">
+        {{ user.name }} · {{ thread.phase }}
+        {% if thread.startup %} · {{ thread.startup.name }}{% endif %}
+        · обновлён {{ thread.updated_at.strftime('%d.%m.%Y %H:%M') }}
+      </p>
+    </div>
+  </header>
+
+  <article class="card stack admin-thread-meta">
+    <div class="admin-kv-grid">
+      <div><span>Фаза</span><strong>{{ thread.phase }}</strong></div>
+      <div><span>Создан</span><strong>{{ thread.created_at.strftime('%d.%m.%Y %H:%M') }}</strong></div>
+      <div><span>Сообщений</span><strong>{{ messages|length }}</strong></div>
+      {% if thread.roast_score is not none %}
+      <div><span>Roast score</span><strong>{{ thread.roast_score }}</strong></div>
+      {% endif %}
+      {% if thread.idea_name %}
+      <div><span>Идея</span><strong>{{ thread.idea_name }}</strong></div>
+      {% endif %}
+      {% if thread.startup %}
+      <div><span>ТОО</span><strong>{{ too_badge(too) }}</strong></div>
+      {% endif %}
+    </div>
+  </article>
+
+  {% if messages %}
+  <article class="card admin-validation-chat admin-validation-chat--full">
+    <h2>История переписки</h2>
+    <div class="admin-validation-chat__scroll">
+      {% for msg in messages %}
+      <div class="admin-validation-chat__msg is-{{ msg.role }}">
+        <span class="admin-validation-chat__role">{% if msg.role == 'user' %}{{ user.name }}{% else %}AI Kangaroo{% endif %}</span>
+        <p>{{ msg.content }}</p>
+        <small class="muted">{{ msg.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+  {% else %}
+  <article class="card">
+    <p class="muted">В этом чате пока нет сообщений.</p>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}

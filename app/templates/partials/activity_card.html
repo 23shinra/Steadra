@@ -1,0 +1,56 @@
+{% from "components/_avatar.html" import user_avatar %}
+{% set activity = feed_item.activity %}
+{% set likes_count = feed_item.likes_count %}
+{% set liked = feed_item.liked %}
+{% set comments = feed_item.comments %}
+<article class="activity-card" id="activity-card-{{ activity.id }}" data-kind="{{ activity.kind }}">
+  {{ user_avatar(activity.user, 'mini') }}
+  <div class="activity-card__body">
+    <div class="activity-top"><strong>{{ activity.title }}</strong>{% if activity.impact %}<span>+{{ activity.impact }}</span>{% endif %}</div>
+    <p>{{ activity.body }}</p>
+    {% if activity.kind == 'poll' and feed_item.poll %}
+    {% include "partials/activity_poll_block.html" %}
+    {% endif %}
+    <small>
+      {{ activity.user.name }}
+      {% if activity.startup %}
+        · <a href="{{ url_for('main.startup_detail', startup_id=activity.startup.id) }}">{{ activity.startup.name }}</a>
+      {% endif %}
+      · {{ activity.kind }}
+    </small>
+    {% if show_social|default(true) %}
+    <div class="activity-card__social">
+      {% include "partials/activity_like_button.html" %}
+      {% include "partials/activity_reactions.html" %}
+      <details class="activity-comments-wrap" id="activity-comments-wrap-{{ activity.id }}">
+        <summary class="activity-comments-toggle">
+          <span class="activity-comments-toggle__icon" aria-hidden="true">💬</span>
+          <span class="activity-comments-toggle__count">{{ comments|length }}</span>
+        </summary>
+        <div class="activity-comments-panel" id="activity-comments-panel-{{ activity.id }}">
+          <form
+            class="activity-comment-form"
+            method="post"
+            action="{{ url_for('main.feed_comment', activity_id=activity.id) }}"
+            hx-post="{{ url_for('main.feed_comment', activity_id=activity.id) }}"
+            hx-target="#activity-comments-list-{{ activity.id }}"
+            hx-swap="innerHTML"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input class="input activity-comment-input" type="text" name="body" placeholder="Напиши комментарий..." maxlength="500" required />
+            <button class="btn btn-ghost activity-comment-send" type="submit" aria-label="Отправить">→</button>
+          </form>
+          <div class="activity-comments__scroll" id="activity-comments-list-{{ activity.id }}">
+            {% include "partials/activity_comments.html" %}
+          </div>
+        </div>
+      </details>
+    </div>
+    {% if feed_item.invite_status != 'hidden' and feed_item.invite_status != 'self' %}
+    <div class="activity-card__team" id="team-invite-{{ activity.id }}">
+      {% include "partials/team_invite_button.html" %}
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</article>

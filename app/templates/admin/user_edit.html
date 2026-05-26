@@ -1,0 +1,74 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Редактировать {{ user.name }} · Админ{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('admin.user_detail', user_id=user.id) }}">← {{ user.name }}</a>
+    <p class="eyebrow">Админ</p>
+    <h1>Редактировать пользователя</h1>
+  </header>
+
+  <form class="admin-form profile-form stack" method="post" action="{{ url_for('admin.edit_user', user_id=user.id) }}">
+    {{ form.csrf_token }}
+
+    <div class="field">
+      <span>{{ form.name.label.text }}</span>
+      {{ form.name(class_="input") }}
+      {% if form.name.errors %}<p class="form-error">{{ form.name.errors[0] }}</p>{% endif %}
+    </div>
+
+    <div class="field">
+      <span>{{ form.phone.label.text }}</span>
+      {{ form.phone(class_="input", data_phone_mask="kz") }}
+      {% if form.phone.errors %}<p class="form-error">{{ form.phone.errors[0] }}</p>{% endif %}
+    </div>
+
+    <div class="admin-form__row">
+      <div class="field">
+        <span>{{ form.account_type.label.text }}</span>
+        {{ form.account_type(class_="input") }}
+      </div>
+      <div class="field">
+        <span>{{ form.role.label.text }}</span>
+        {{ form.role(class_="input") }}
+        {% if form.role.errors %}<p class="form-error">{{ form.role.errors[0] }}</p>{% endif %}
+      </div>
+    </div>
+
+    <div class="admin-form__row">
+      <div class="field">
+        <span>{{ form.age.label.text }}</span>
+        {{ form.age(class_="input") }}
+      </div>
+      <div class="field">
+        <span>{{ form.experience_years.label.text }}</span>
+        {{ form.experience_years(class_="input") }}
+      </div>
+    </div>
+
+    <div class="field">
+      <span>{{ form.experience_text.label.text }}</span>
+      {{ form.experience_text(class_="input", rows="3") }}
+    </div>
+
+    <div class="admin-form__row">
+      <div class="field">
+        <span>{{ form.score.label.text }}</span>
+        {{ form.score(class_="input") }}
+      </div>
+      <div class="field">
+        <span>{{ form.streak.label.text }}</span>
+        {{ form.streak(class_="input") }}
+      </div>
+    </div>
+
+    <label class="checkbox-row">
+      {{ form.onboarding_done() }}
+      <span>{{ form.onboarding_done.label.text }}</span>
+    </label>
+
+    <button class="btn btn-primary full" type="submit">Сохранить</button>
+    <a class="btn btn-ghost full" href="{{ url_for('admin.user_detail', user_id=user.id) }}">Отмена</a>
+  </form>
+</section>
+{% endblock %}

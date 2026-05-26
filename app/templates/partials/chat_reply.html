@@ -1,0 +1,41 @@
+<div class="chat-msg chat-msg-ai">
+  <div class="chat-msg__bubble">
+    {% for paragraph in reply.split('\n\n') %}
+      {% if paragraph.strip() %}
+        <p>{{ paragraph.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% include "partials/chat_roast_card.html" %}
+{% if map_notice %}
+<div class="chat-msg chat-msg-system">
+  <div class="chat-msg__bubble is-map">{{ map_notice }}</div>
+</div>
+{% endif %}
+{% if step_notice %}
+<div class="chat-msg chat-msg-system">
+  <div class="chat-msg__bubble">{{ step_notice }}</div>
+</div>
+{% endif %}
+{% include "partials/chat_validate_actions.html" %}
+{% include "partials/chat_map_toggle.html" %}
+{% if progress_url %}
+<div id="chat-progress-btn-wrap" class="chat-header__actions" hx-swap-oob="true">
+  <a class="chat-progress-btn" href="{{ progress_url }}" aria-label="Прогресс">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M4 19h16"/>
+    </svg>
+    <span>Прогресс</span>
+  </a>
+</div>
+{% endif %}
+{% if thread %}
+  <input type="hidden" name="thread_id" id="chat-thread-field" value="{{ thread.id }}" hx-swap-oob="true" />
+  <nav class="chat-sidebar__list" id="chat-sidebar-list" hx-swap-oob="innerHTML">
+    {% with active_thread=thread %}
+      {% include "partials/chat_sidebar_list.html" %}
+    {% endwith %}
+  </nav>
+  <strong id="chat-header-title" hx-swap-oob="innerHTML">{{ thread.title }}</strong>
+{% endif %}

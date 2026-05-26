@@ -1,0 +1,20 @@
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.progress_page', startup=startup.id) }}">← Карта</a>
+    <h1>One-pager · {{ startup.name }}</h1>
+  </header>
+  {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+  {% if pager %}
+  <article class="card stack">
+    <h2>{{ pager.title }}</h2>
+    <p><strong>Проблема</strong> {{ pager.problem }}</p>
+    <p><strong>Решение</strong> {{ pager.solution }}</p>
+    <p><strong>Рынок</strong> {{ pager.market }}</p>
+    <p><strong>Traction</strong> {{ pager.traction }}</p>
+    <p><strong>Модель</strong> {{ pager.business_model }}</p>
+    <p><strong>Команда</strong> {{ pager.team }}</p>
+    <p><strong>Ask</strong> {{ pager.ask }}</p>
+  </article>
+  {% endif %}
+  <p class="hint">AI-запросов осталось: {{ ai_remaining }}</p>
+</section>

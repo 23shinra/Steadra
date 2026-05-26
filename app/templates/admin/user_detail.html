@@ -1,0 +1,254 @@
+{% extends "admin/base_admin.html" %}
+{% from "components/_avatar.html" import user_avatar %}
+{% from "components/_too_badge.html" import too_badge %}
+{% from "components/_admin_stat.html" import admin_stat %}
+{% block title %}{{ user.name }} · Админ{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="flash flash-{{ category }}">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+
+  <header class="page-title admin-page__head">
+    <div>
+      <a class="back-link" href="{{ url_for('admin.dashboard') }}">← Панель</a>
+      <p class="eyebrow">Пользователь #{{ user.id }}</p>
+      <h1>{{ user.name }}</h1>
+      <p class="muted">{{ user.phone }} · {{ account_type_label(user.account_type) }}</p>
+    </div>
+    <div class="admin-page__actions">
+      <a class="btn btn-primary" href="{{ url_for('admin.edit_user', user_id=user.id) }}">Редактировать</a>
+    </div>
+  </header>
+
+  <article class="admin-detail-hero">
+    {{ user_avatar(user, 'xl') }}
+    <div class="admin-detail-hero__meta">
+      <div class="admin-kv-grid">
+        <div><span>Роль</span><strong>{{ user.role|user_role }}</strong></div>
+        <div><span>XP</span><strong>{{ user.score }}</strong></div>
+        <div><span>Streak</span><strong>{{ user.streak }}</strong></div>
+        <div><span>Опыт</span><strong>{{ user.experience_years or 0 }} лет</strong></div>
+        <div><span>Онбординг</span><strong>{{ 'Да' if user.onboarding_done else 'Нет' }}</strong></div>
+        <div><span>Регистрация</span><strong>{{ user.created_at.strftime('%d.%m.%Y') }}</strong></div>
+      </div>
+      {% if user.experience_text %}
+      <p class="admin-detail-note">{{ user.experience_text }}</p>
+      {% endif %}
+    </div>
+  </article>
+
+  <div class="admin-detail-stats">
+    {{ admin_stat(detail.likes_count, 'Лайки', 'likes') }}
+    {{ admin_stat(detail.comments_count, 'Комментарии', 'comments') }}
+    {{ admin_stat(detail.activities|length, 'События (посл.)', 'activities') }}
+    {{ admin_stat(detail.threads|length, 'AI-чаты', 'threads') }}
+  </div>
+
+  {% if retention %}
+  <article class="admin-panel">
+    <h2>Удержание</h2>
+    {% if retention.retention_row %}
+    <div class="admin-retention-summary{% if retention.retention_row.stuck_level == 'critical' %} admin-retention-summary--danger{% elif retention.retention_row.stuck_level == 'warn' %} admin-retention-summary--warn{% endif %}">
+      <div class="admin-retention-summary__head">
+        <strong>{{ retention.retention_row.step_label }}</strong>
+        <span class="admin-tag">{{ retention.retention_row.progress_pct }}%</span>
+      </div>
+      {% if retention.retention_row.days_on_step is not none %}
+      <p class="muted">{{ retention.retention_row.days_on_step }} дн. на текущем шаге</p>
+      {% elif retention.retention_row.progress.finished %}
+      <p class="muted">Карта пройдена</p>
+      {% else %}
+      <p class="muted">Нет проекта или шаг не начат</p>
+      {% endif %}
+      <div class="admin-progress-track"><div class="admin-progress-fill" style="width: {{ retention.retention_row.progress_pct }}%"></div></div>
+    </div>
+    {% endif %}
+
+    <div class="admin-retention-grid">
+      <div>
+        <p class="eyebrow">Push</p>
+        <strong>{{ retention.push_count }}</strong> подписок
+      </div>
+      {% if retention.checklist %}
+      <div>
+        <p class="eyebrow">Checklist ({{ retention.checklist.done_count }}/{{ retention.checklist.total }})</p>
+        <ul class="admin-onboarding-list">
+          {% for task in retention.checklist.tasks %}
+          <li class="{% if task.done %}is-done{% endif %}">{{ '✓' if task.done else '○' }} {{ task.label }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% elif user.onboarding_done %}
+      <div>
+        <p class="eyebrow">Checklist</p>
+        <p class="muted">Завершён</p>
+      </div>
+      {% endif %}
+      {% if retention.weekly_goals %}
+      <div>
+        <p class="eyebrow">Задачи на неделю</p>
+        <strong>{{ retention.weekly_goals.done }}/{{ retention.weekly_goals.total }}</strong>
+      </div>
+      {% endif %}
+    </div>
+  </article>
+  {% endif %}
+
+  {% if detail.notifications %}
+  <article class="admin-panel">
+    <h2>Уведомления</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>Тип</th><th>Заголовок</th><th>Статус</th><th>Дата</th></tr>
+        </thead>
+        <tbody>
+          {% for item in detail.notifications %}
+          <tr>
+            <td><span class="admin-tag">{{ item.kind|notification_kind }}</span></td>
+            <td class="admin-table__clip">{{ item.title }}</td>
+            <td>{% if item.read_at %}прочитано{% else %}<span class="admin-badge">новое</span>{% endif %}</td>
+            <td>{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  {% if detail.owned_startups %}
+  <article class="admin-panel">
+    <h2>Свои проекты и прогресс</h2>
+    <div class="admin-startup-cards">
+      {% for row in detail.owned_startups %}
+      <div class="admin-startup-card">
+        <div class="admin-startup-card__head">
+          <strong>{{ row.startup.name }}</strong>
+          <span class="admin-tag">{{ row.progress.done }}/{{ row.progress.total }} · {{ row.progress.percent }}%</span>
+          {{ too_badge(row.too) }}
+        </div>
+        <p class="muted">Сейчас: {{ row.current_label }}</p>
+        {% if row.days_on_step is not none %}
+        <p class="muted{% if row.stuck_level == 'critical' %} admin-text--danger{% elif row.stuck_level == 'warn' %} admin-text--warn{% endif %}">{{ row.days_on_step }} дн. на шаге</p>
+        {% endif %}
+        {% if row.weekly_goals_total is not none %}
+        <p class="muted">Задачи недели: {{ row.weekly_goals_done }}/{{ row.weekly_goals_total }}</p>
+        {% endif %}
+        <div class="admin-progress-track"><div class="admin-progress-fill" style="width: {{ row.progress.percent }}%"></div></div>
+        {% if row.step_logs %}
+        <ul class="admin-step-log">
+          {% for log in row.step_logs %}
+          <li><span>{{ log.completed_at.strftime('%d.%m.%Y') }}</span> {{ log.step_label }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% if row.members|length > 1 %}
+        <p class="admin-team-line"><span>Команда:</span> {% for m in row.members %}{{ m.name }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
+        {% if row.pending_invites %}
+        <p class="admin-team-line admin-team-line--pending">Ждут ответа: {% for inv in row.pending_invites %}{{ inv.invitee.name }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+
+  {% if detail.joined_startups %}
+  <article class="admin-panel">
+    <h2>В чужих командах</h2>
+    <div class="admin-startup-cards">
+      {% for row in detail.joined_startups %}
+      <div class="admin-startup-card">
+        <div class="admin-startup-card__head">
+          <strong>{{ row.startup.name }}</strong>
+          <span class="admin-tag">участник</span>
+          {{ too_badge(row.too) }}
+        </div>
+        <p class="muted">Основатель: {{ row.startup.owner.name }} · шаг {{ row.progress.done }}/{{ row.progress.total }}</p>
+        <p class="muted">Сейчас: {{ row.current_label }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+
+  {% if detail.invites_sent or detail.invites_received %}
+  <article class="admin-panel">
+    <h2>Приглашения в команду</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>Кто</th><th>Кому</th><th>Проект</th><th>Статус</th><th>Дата</th></tr>
+        </thead>
+        <tbody>
+          {% for invite in detail.invites_sent %}
+          <tr>
+            <td>{{ invite.inviter.name }} →</td>
+            <td>{{ invite.invitee.name }}</td>
+            <td>{{ invite.startup.name }}</td>
+            <td><span class="admin-status admin-status--{{ invite.status }}">{{ invite.status }}</span></td>
+            <td>{{ invite.created_at.strftime('%d.%m.%Y') }}</td>
+          </tr>
+          {% endfor %}
+          {% for invite in detail.invites_received %}
+          <tr>
+            <td>{{ invite.inviter.name }} →</td>
+            <td>{{ invite.invitee.name }}</td>
+            <td>{{ invite.startup.name }}</td>
+            <td><span class="admin-status admin-status--{{ invite.status }}">{{ invite.status }}</span></td>
+            <td>{{ invite.created_at.strftime('%d.%m.%Y') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  {% if detail.threads %}
+  <article class="admin-panel">
+    <h2>AI-чаты</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>ID</th><th>Название</th><th>Фаза</th><th>Обновлён</th></tr>
+        </thead>
+        <tbody>
+          {% for thread in detail.threads %}
+          <tr>
+            <td><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">#{{ thread.id }}</a></td>
+            <td class="admin-table__clip"><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">{{ thread.title }}</a></td>
+            <td>{{ thread.phase }}</td>
+            <td>{{ thread.updated_at.strftime('%d.%m.%Y %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  {% if detail.activities %}
+  <article class="admin-panel">
+    <h2>Активность и взаимодействия</h2>
+    <div class="admin-activity-list">
+      {% for activity in detail.activities %}
+      <div class="admin-activity-item">
+        <span class="admin-tag admin-tag--kind">{{ activity.kind }}</span>
+        <div>
+          <strong>{{ activity.title }}</strong>
+          <p class="muted">{{ activity.body[:140] }}{% if activity.body|length > 140 %}…{% endif %}</p>
+          <small class="muted">{{ activity.created_at.strftime('%d.%m.%Y %H:%M') }}{% if activity.startup %} · {{ activity.startup.name }}{% endif %}</small>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}

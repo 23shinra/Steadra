@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% from "components/_avatar.html" import user_avatar %}
+{% from "components/_startup_card.html" import startup_card %}
+{% block title %}{{ user.name }} · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen profile-page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="flash flash-{{ category }}">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+
+  {% if not is_own_profile %}
+  <a class="back-link" href="{{ url_for('main.leaderboard') }}">← Лидерборд</a>
+  {% endif %}
+
+  <header class="profile-hero">
+    {% if is_own_profile %}
+    <a class="icon-btn profile-edit-btn" href="{{ url_for('main.profile_edit') }}" aria-label="Редактировать профиль">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m4.144 16.735l.493-3.425a.97.97 0 0 1 .293-.587l9.665-9.664a1.03 1.03 0 0 1 .973-.281a5.1 5.1 0 0 1 2.346 1.372a5.1 5.1 0 0 1 1.384 2.346a1.07 1.07 0 0 1-.282.973l-9.664 9.664a1.17 1.17 0 0 1-.598.294l-3.437.492a1.044 1.044 0 0 1-1.173-1.184m8.633-11.846l4.41 4.398M3.79 21.25h16.42"/>
+      </svg>
+    </a>
+    {% endif %}
+    {{ user_avatar(user, 'xl') }}
+    {% if is_investor_profile %}
+    <h1>{{ user.name }}</h1>
+    <p class="profile-type">Инвестор</p>
+    {% else %}
+    <p class="eyebrow">{{ user.role|user_role }}</p>
+    <h1>{{ user.name }}</h1>
+    <div class="profile-stats">
+      <span><b>{{ user.score or 0 }}</b> XP</span>
+      <span><b>{{ user.experience_years or 0 }}</b> лет опыта</span>
+      <span><b>{{ user.streak or 0 }}</b> streak</span>
+    </div>
+    {% endif %}
+  </header>
+
+  {% if is_own_profile %}
+  <div class="profile-actions stack">
+    <a class="btn btn-ghost" href="{{ url_for('extensions.messages_inbox') }}">Сообщения</a>
+    <form method="post" action="{{ url_for('extensions.set_locale') }}" class="locale-switch">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <select name="locale" class="input" onchange="this.form.submit()">
+        {% for code, label in supported_locales.items() %}
+        <option value="{{ code }}" {% if current_locale == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  {% elif not is_investor_profile and user.open_for_messages %}
+  <a class="btn btn-ghost" href="{{ url_for('extensions.messages_thread', other_id=user.id) }}">Написать</a>
+  {% endif %}
+
+  <section class="profile-section">
+    <div class="profile-section__head">
+      <h2>{% if is_own_profile %}Мои проекты{% else %}Проекты{% endif %}</h2>
+      {% if my_startups %}
+      <span class="profile-section__count">{{ my_startups|length }}</span>
+      {% endif %}
+    </div>
+    {% if my_startups %}
+    <div class="startup-list profile-startup-list">
+      {% for startup in my_startups %}
+        {% if is_investor_user and not is_own_profile %}
+          {{ startup_card(startup, href=url_for('investor.candidate_detail', startup_id=startup.id)) }}
+        {% else %}
+          {{ startup_card(startup) }}
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <article class="profile-empty">
+      <strong>{% if is_investor_profile and is_own_profile %}Нет избранных кандидатов{% elif is_own_profile %}Нет проектов{% else %}Проектов пока нет{% endif %}</strong>
+      <p>{% if is_investor_profile and is_own_profile %}Отмечайте интересных основателей в разделе «Кандидаты».{% elif is_own_profile %}После создания стартапа он появится здесь.{% else %}У этого пользователя пока нет стартапов на платформе.{% endif %}</p>
+    </article>
+    {% endif %}
+  </section>
+
+  {% if is_own_profile and team and not is_investor_profile %}
+  <section class="profile-section">
+    <div class="profile-section__head">
+      <h2>Моя команда</h2>
+      {% if team.incoming_count %}
+      <span class="profile-section__badge">{{ team.incoming_count }} нов.</span>
+      {% endif %}
+    </div>
+
+    <div class="profile-team-card">
+      {% if team.incoming_invites %}
+      <div class="profile-team-card__group">
+        <p class="profile-team-card__label">Приглашения</p>
+        <div class="profile-team-card__stack">
+          {% for preview in team.invite_previews %}
+          <a class="team-invite-card" href="{{ url_for('main.team_invite_detail', invite_id=preview.invite.id) }}">
+            <div class="team-invite-card__main">
+              <strong>{{ preview.invite.inviter.name }}</strong>
+              <span>{{ preview.invite.startup.name }}</span>
+              <span class="team-invite-card__progress">{{ preview.progress.done }}/{{ preview.progress.total }} · {{ preview.progress.percent }}%</span>
+              <span class="team-invite-card__step">Сейчас: {{ preview.current_step_label }}</span>
+            </div>
+            <span class="team-invite-card__cta">Профиль команды →</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if team.primary_startup and team.members %}
+      <div class="profile-team-card__group">
+        <p class="profile-team-card__label">Участники</p>
+        <p class="profile-team-card__hint">{{ team.primary_startup.name }}</p>
+        <ul class="team-members">
+          {% for member in team.members %}
+          <li class="team-member">
+            {{ user_avatar(member, 'mini') }}
+            <div class="team-member__info">
+              <strong>{{ member.name }}</strong>
+              {% if member.id == team.primary_startup.owner_id %}
+              <span class="team-member__role">Основатель</span>
+              {% else %}
+              <span class="team-member__role">Участник</span>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if team.sent_invites %}
+      <div class="profile-team-card__group">
+        <p class="profile-team-card__label">Ждут ответа</p>
+        <ul class="team-pending">
+          {% for invite in team.sent_invites %}
+          <li class="team-pending__item">
+            <strong>{{ invite.invitee.name }}</strong>
+            <span>отправлено</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if team.joined_startups %}
+      <div class="profile-team-card__group">
+        <p class="profile-team-card__label">Где я в команде</p>
+        <ul class="team-pending">
+          {% for startup in team.joined_startups %}
+          <li class="team-pending__item">
+            <a href="{{ url_for('main.startup_detail', startup_id=startup.id) }}">
+              <strong>{{ startup.name }}</strong>
+              <span>{{ startup.owner.name }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if not team.incoming_invites and not team.members and not team.sent_invites and not team.joined_startups %}
+      <article class="profile-empty profile-empty--inline">
+        <strong>Команда пока пустая</strong>
+        <p>Приглашай людей из ленты — кнопка «Пригласить в команду» под их постами.</p>
+      </article>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if is_own_profile %}
+  <footer class="profile-footer">
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="btn btn-ghost full profile-logout" type="submit">Выйти</button>
+    </form>
+  </footer>
+  {% endif %}
+</section>
+{% endblock %}

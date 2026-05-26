@@ -1,0 +1,18 @@
+<form class="stack" method="post" action="{{ url_for('auth.verify_login') }}" hx-post="{{ url_for('auth.verify_login') }}" hx-target="#auth-step" hx-swap="innerHTML">
+  {{ otp_form.csrf_token }}
+  {{ otp_form.phone(type="hidden") }}
+  <p class="hint">Код отправлен на <strong>{{ phone }}</strong></p>
+  <label class="field">
+    <span>{{ otp_form.code.label.text }}</span>
+    {{ otp_form.code(class_="input", placeholder="1234", inputmode="numeric", autocomplete="one-time-code", maxlength="6") }}
+  </label>
+  {% if otp_form.code.errors %}
+    <p class="form-error">{{ otp_form.code.errors[0] }}</p>
+  {% endif %}
+  {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+  {% if demo_hint %}
+  <p class="hint name-verify-block">Demo: код <strong>{{ demo_hint }}</strong></p>
+  {% endif %}
+  <button class="btn btn-primary" type="submit">Войти</button>
+  <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Другой номер</a>
+</form>

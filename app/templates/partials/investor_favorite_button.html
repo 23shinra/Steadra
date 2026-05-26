@@ -1,0 +1,17 @@
+<form
+  class="investor-favorite"
+  hx-post="{{ url_for('investor.toggle_favorite_route', startup_id=startup.id) }}"
+  hx-target="closest .investor-favorite"
+  hx-swap="outerHTML"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <button
+    class="investor-favorite__btn{% if is_favorite %} is-active{% endif %}"
+    type="submit"
+    aria-pressed="{{ 'true' if is_favorite else 'false' }}"
+    aria-label="{{ 'Убрать из избранного' if is_favorite else 'Добавить в избранное' }}"
+    onclick="event.stopPropagation()"
+  >
+    <span aria-hidden="true">★</span>
+  </button>
+</form>

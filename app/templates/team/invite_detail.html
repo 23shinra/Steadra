@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% from "components/_avatar.html" import user_avatar %}
+{% block title %}Приглашение в команду · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg team-invite-page">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.profile') }}">← Профиль</a>
+    <p class="eyebrow">Профиль команды</p>
+    <h1>{{ startup.name }}</h1>
+    <p class="muted">{{ startup.tagline }} · {{ inviter.name }} приглашает вас</p>
+  </header>
+
+  <article class="card team-invite-hero">
+    <div class="team-invite-hero__row">
+      {{ user_avatar(inviter, 'mini') }}
+      <div>
+        <strong>{{ inviter.name }}</strong>
+        <p class="muted">{{ inviter.role|user_role }} · основатель</p>
+      </div>
+    </div>
+    <div class="team-invite-hero__stats">
+      <span><b>{{ progress.done }}/{{ progress.total }}</b> шагов</span>
+      <span><b>{{ progress.percent }}%</b> прогресса</span>
+      <span><b>{{ team.count }}</b> в команде</span>
+      <span>Стадия <b>{{ startup.stage }}</b></span>
+    </div>
+  </article>
+
+  {% if finished %}
+  <article class="card team-invite-current">
+    <p class="eyebrow">Статус</p>
+    <h2>Ветка пройдена</h2>
+    <p class="muted">Команда закрыла все шаги roadmap до денег.</p>
+  </article>
+  {% elif current_step %}
+  <article class="card team-invite-current">
+    <p class="eyebrow">Сейчас делают</p>
+    <h2>{{ current_step.label }}</h2>
+    <p class="muted">{{ current_step.hint }}</p>
+    {% if days_on_step is not none %}
+    <p class="team-invite-current__days">{{ days_on_step }} дн. на этом шаге</p>
+    {% endif %}
+  </article>
+  {% endif %}
+
+  {% if weekly_goals %}
+  <article class="card team-invite-goals">
+    <div class="section-head">
+      <h2>Задачи команды на неделю</h2>
+      <span class="muted">{{ weekly_goals.done }}/{{ weekly_goals.total }}</span>
+    </div>
+    <ul class="team-invite-goals__list">
+      {% for goal in weekly_goals.goals %}
+      <li class="team-invite-goals__item{% if goal.done %} is-done{% endif %}">
+        <span class="team-invite-goals__mark" aria-hidden="true">{% if goal.done %}✓{% else %}○{% endif %}</span>
+        <span>{{ goal.label }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  <article class="card">
+    <header class="investor-map-card__head">
+      <h2>Команда ({{ team.count }})</h2>
+    </header>
+    <ul class="team-members">
+      {% for member in team.members %}
+      <li class="team-member">
+        {{ user_avatar(member.user, 'mini') }}
+        <div class="team-member__info">
+          <strong>{{ member.user.name }}</strong>
+          <span class="team-member__role">{{ member.role_label }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  {% if step_timeline %}
+  <article class="card team-invite-timeline">
+    <header class="investor-map-card__head">
+      <h2>Что уже сделано</h2>
+      <p class="muted">Пройденные этапы и текущий шаг.</p>
+    </header>
+    <ul class="team-invite-timeline__list">
+      {% for step in step_timeline %}
+      <li class="team-invite-timeline__item is-{{ step.status }}">
+        <span class="team-invite-timeline__status">{% if step.status == 'done' %}✓{% elif step.status == 'active' %}→{% endif %}</span>
+        <div>
+          <strong>{{ step.label }}</strong>
+          {% if step.status == 'active' %}
+          <span class="muted"> · сейчас</span>
+          {% elif step.days is not none %}
+          <span class="muted"> · {{ step.days }} дн.</span>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </article>
+  {% endif %}
+
+  <article class="card investor-map-card">
+    <header class="investor-map-card__head">
+      <h2>Карта прогресса</h2>
+      <p class="muted">Полная картина пути команды к деньгам.</p>
+    </header>
+    {% include "partials/roadmap_map.html" %}
+  </article>
+
+  <div class="team-invite-actions">
+    <form method="post" action="{{ url_for('main.team_invite_accept', invite_id=invite.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="btn btn-primary full" type="submit">Принять приглашение</button>
+    </form>
+    <form method="post" action="{{ url_for('main.team_invite_decline', invite_id=invite.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="btn btn-ghost full" type="submit">Отклонить</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

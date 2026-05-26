@@ -1,0 +1,11 @@
+<form class="stack" method="post" action="{{ url_for('admin.submit_login') }}" hx-post="{{ url_for('admin.submit_login') }}" hx-target="this" hx-swap="outerHTML">
+  {{ form.csrf_token }}
+  <label class="field">
+    <span>{{ form.phone.label.text }}</span>
+    {{ form.phone(class_="input", placeholder="9999999999", inputmode="numeric", autocomplete="tel", maxlength="11", data_phone_mask="kz") }}
+  </label>
+  {% if form.phone.errors %}
+    <p class="form-error">{{ form.phone.errors[0] }}</p>
+  {% endif %}
+  <button class="btn btn-primary" type="submit">Войти</button>
+</form>

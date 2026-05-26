@@ -1,0 +1,63 @@
+{% extends "admin/base_admin.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% block title %}Валидация ТОО · Admin{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title admin-page__head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Валидация ТОО</h1>
+      <p class="muted">Заявки из чата: фаундеры подтверждают, что ТОО уже зарегистрировано в РК.</p>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="flash flash-{{ category }}">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+
+  {% if bundles %}
+  <div class="admin-validation-list">
+    {% for bundle in bundles %}
+    {% set req = bundle.request %}
+    <article class="admin-validation-card card">
+      <header class="admin-validation-card__head">
+        <div>
+          <strong>{{ req.user.name }}</strong>
+          <span class="muted">· {{ req.startup.name }}</span>
+        </div>
+        {{ too_badge(bundle.too) }}
+      </header>
+      <div class="admin-validation-card__report">
+        <p class="admin-validation-card__label">ТОО</p>
+        <p><strong>{{ req.company_name }}</strong> · BIN {{ req.bin }}</p>
+        <p>{{ req.message }}</p>
+      </div>
+      <div class="admin-validation-card__attachments">
+        {% if req.evidence_filepath %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.validation_too_evidence', request_id=req.id) }}">📎 {{ req.evidence_filename or 'Вложение' }}</a>
+        {% endif %}
+        {% if req.evidence_url %}
+        <a class="btn btn-ghost btn-sm" href="{{ req.evidence_url }}" target="_blank" rel="noopener">🔗 Выписка</a>
+        {% endif %}
+      </div>
+      {% if req.chat_excerpt %}
+      <div class="admin-validation-chat">
+        <p class="admin-validation-card__label">Фрагмент чата</p>
+        <pre class="admin-too-excerpt">{{ req.chat_excerpt }}</pre>
+      </div>
+      {% endif %}
+      <p class="muted">Шаг на карте: {{ bundle.current_step.label if bundle.current_step else '—' }} · {{ req.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+      <a class="btn btn-primary" href="{{ url_for('admin.validation_too_detail', request_id=req.id) }}">Проверить</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <article class="card admin-empty">
+    <strong>Нет заявок на ТОО</strong>
+    <p class="muted">Когда фаундер на финальных шагах отправит BIN и документы из чата — заявка появится здесь.</p>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}

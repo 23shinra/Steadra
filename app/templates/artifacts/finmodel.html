@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Финмодель · {{ startup.name }}{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.progress_page', startup=startup.id) }}">← Карта</a>
+    <h1>Финмодель · {{ startup.name }}</h1>
+    <p class="muted">B2B — продажи компаниям. B2C — продажи людям. Цифры могут быть гипотезами.</p>
+  </header>
+
+  <form class="card stack finmodel-form" method="post" id="finmodel-form">
+    {{ form.csrf_token }}
+    <label class="field">
+      <span>Тип модели</span>
+      {{ form.model_type(class_="input", id="model-type-select") }}
+    </label>
+    <div class="finmodel-fields finmodel-fields--b2c" data-model="b2c">
+      <label class="field"><span>CAC</span>{{ form.cac(class_="input", placeholder="5000 ₸") }}</label>
+      <label class="field"><span>ARPU / средний чек</span>{{ form.arpu(class_="input", placeholder="2990 ₸/мес") }}</label>
+      <label class="field"><span>Retention</span>{{ form.retention(class_="input", placeholder="40% M3") }}</label>
+      <label class="field"><span>LTV</span>{{ form.ltv(class_="input", placeholder="15000 ₸") }}</label>
+    </div>
+    <div class="finmodel-fields finmodel-fields--b2b" data-model="b2b">
+      <label class="field"><span>ACV (годовой контракт)</span>{{ form.acv(class_="input", placeholder="1.2M ₸") }}</label>
+      <label class="field"><span>Sales cycle (дней)</span>{{ form.sales_cycle(class_="input", placeholder="45") }}</label>
+      <label class="field"><span>Churn (%/мес)</span>{{ form.churn(class_="input", placeholder="2%") }}</label>
+      <label class="field"><span>Gross margin (%)</span>{{ form.margin(class_="input", placeholder="75%") }}</label>
+      <label class="field"><span>CAC</span>{{ form.cac(class_="input", placeholder="200000 ₸") }}</label>
+    </div>
+    <label class="field">
+      <span>Дополнительно</span>
+      {{ form.notes(class_="input", rows="3", placeholder="Каналы, assumptions, что не сходится") }}
+    </label>
+    <button type="submit" class="btn btn-primary">Проверить AI</button>
+  </form>
+
+  {% if analysis %}
+  <article class="card">
+    <h2>{{ analysis.model_type|upper }} · score {{ analysis.score }}</h2>
+    <p>{{ analysis.verdict }}</p>
+    <p class="muted">{{ analysis.summary }}</p>
+    {% if analysis.metrics %}
+    <h3>Метрики</h3>
+    <dl class="finmodel-metrics">
+      {% for key, val in analysis.metrics.items() %}
+      <dt>{{ key }}</dt><dd>{{ val }}</dd>
+      {% endfor %}
+    </dl>
+    {% endif %}
+    {% if analysis.gaps %}
+    <h3>Не хватает</h3>
+    <ul>{% for g in analysis.gaps %}<li>{{ g }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if analysis.recommendations %}
+    <h3>Рекомендации</h3>
+    <ul>{% for r in analysis.recommendations %}<li>{{ r }}</li>{% endfor %}</ul>
+    {% endif %}
+  </article>
+  {% endif %}
+  <p class="hint">AI-запросов осталось: {{ ai_remaining }}</p>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+(function () {
+  var select = document.getElementById("model-type-select");
+  var blocks = document.querySelectorAll(".finmodel-fields");
+  function sync() {
+    var v = select && select.value || "b2c";
+    blocks.forEach(function (b) {
+      b.hidden = b.getAttribute("data-model") !== v;
+    });
+  }
+  if (select) {
+    select.addEventListener("change", sync);
+    sync();
+  }
+})();
+</script>
+{% endblock %}

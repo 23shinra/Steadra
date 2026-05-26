@@ -1,0 +1,21 @@
+{% if onboarding %}
+<article class="onboarding-checklist card">
+  <div class="section-head">
+    <h2>Старт в Kangaroo</h2>
+    <span class="muted">{{ onboarding.done_count }}/{{ onboarding.total }}</span>
+  </div>
+  <ul class="onboarding-checklist__list">
+    {% for item in onboarding.tasks %}
+    <li class="onboarding-checklist__item{% if item.done %} is-done{% endif %}">
+      {% if item.done %}
+      <span class="onboarding-checklist__check" aria-hidden="true">✓</span>
+      <span>{{ item.label }}</span>
+      {% else %}
+      <span class="onboarding-checklist__check" aria-hidden="true">○</span>
+      <a href="{{ item.href }}">{{ item.label }}</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</article>
+{% endif %}

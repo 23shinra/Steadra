@@ -1,0 +1,30 @@
+{% if show_intro %}
+  <div class="chat-msg chat-msg-ai">
+    <div class="chat-msg__bubble">
+      {% if onboarding_mode %}
+      <p><strong>Добро пожаловать!</strong> Начни с одной фразы — что за продукт и для кого.</p>
+      <p>После прожарки нажми «Запустить путь» — откроется карта шагов к деньгам.</p>
+      {% else %}
+      <p>Опиши стартап-идею — сначала прожарка и вердикт.</p>
+      <p>После подтверждения откроется путь: MVP → пользователи → traction → ТОО → деньги.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+{% for msg in messages %}
+  {% if msg.role == "user" %}
+    <div class="chat-msg chat-msg-user">
+      <div class="chat-msg__bubble">{{ msg.content }}</div>
+    </div>
+  {% else %}
+    <div class="chat-msg chat-msg-ai">
+      <div class="chat-msg__bubble">
+        {% for paragraph in msg.content.split('\n\n') %}
+          {% if paragraph.strip() %}
+            <p>{{ paragraph.strip() }}</p>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endfor %}

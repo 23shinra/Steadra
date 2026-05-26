@@ -1,0 +1,3 @@
+{% macro too_badge(too, prefix='ТОО') %}
+<span class="too-badge too-badge--{{ too.state }}" title="Статус регистрации ТОО">{% if prefix %}{{ prefix }}: {% endif %}{{ too.label }}</span>
+{% endmacro %}

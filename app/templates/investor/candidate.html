@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% block title %}{{ startup.name }} · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg investor-page">
+  <header class="page-title investor-detail__head">
+    <a class="btn btn-ghost investor-back" href="{{ url_for('investor.candidates') }}">← Кандидаты</a>
+    <div class="investor-detail__title">
+      <div>
+        <p class="eyebrow">Кандидат</p>
+        <h1>{{ startup.name }}</h1>
+        <p class="muted">{{ startup.tagline }}</p>
+      </div>
+      {% include "partials/investor_favorite_button.html" %}
+    </div>
+  </header>
+
+  <article class="card investor-summary">
+    <div class="investor-summary__grid">
+      <div>
+        <span class="investor-summary__label">Основатель</span>
+        <strong>{{ owner.name }}</strong>
+        <p class="muted">{{ owner.role|user_role }}</p>
+      </div>
+      <div>
+        <span class="investor-summary__label">Команда</span>
+        <strong>{{ team.count }} чел.</strong>
+      </div>
+      <div>
+        <span class="investor-summary__label">ТОО</span>
+        {{ too_badge(too, '') }}
+      </div>
+      <div>
+        <span class="investor-summary__label">Прогресс</span>
+        <strong>{{ progress.done }}/{{ progress.total }} · {{ progress.percent }}%</strong>
+      </div>
+      <div>
+        <span class="investor-summary__label">Темп</span>
+        {% if pace %}
+        <strong>{{ pace.avg_days }} дн./шаг</strong>
+        <p class="muted">За {{ pace.total_days }} дн. закрыто {{ progress.done }} шагов</p>
+        {% elif current_step_days is not none %}
+        <strong>{{ current_step_days }} дн. на шаге</strong>
+        {% else %}
+        <strong>—</strong>
+        {% endif %}
+      </div>
+      {% if total_completed_days %}
+      <div>
+        <span class="investor-summary__label">Суммарно</span>
+        <strong>{{ total_completed_days }} дн.</strong>
+        <p class="muted">на закрытые шаги</p>
+      </div>
+      {% endif %}
+    </div>
+  </article>
+
+  <article class="card investor-team-card">
+    <header class="investor-map-card__head">
+      <h2>Команда ({{ team.count }})</h2>
+      <p class="muted">Состав проекта и роли участников.</p>
+    </header>
+    <ul class="investor-team-list">
+      {% for member in team.members %}
+      <li class="investor-team-list__item">
+        <strong>{{ member.user.name }}</strong>
+        <span class="chip{% if member.is_owner %} is-active{% endif %}">{{ member.role_label }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </article>
+
+  <article class="card investor-map-card">
+    <header class="investor-map-card__head">
+      <h2>Карта прогресса</h2>
+      <p class="muted">Даты и длительность каждого шага — видно, как быстро двигается команда.</p>
+    </header>
+    {% include "partials/roadmap_map.html" %}
+  </article>
+
+  <article class="card investor-timeline-card">
+    <header class="investor-map-card__head">
+      <h2>Хронология шагов</h2>
+      <p class="muted">За сколько дней закрыт каждый этап roadmap.</p>
+    </header>
+    {% include "partials/investor_step_timeline.html" %}
+  </article>
+
+  {% if step_logs %}
+  <article class="card">
+    <h2>Доказательства шагов</h2>
+    {% for idx, log in step_logs.items() %}
+    <p><strong>{{ log.step_label }}</strong>{% if log.evidence_url %} · <a href="{{ log.evidence_url }}" target="_blank" rel="noopener">proof</a>{% endif %}{% if log.evidence_text %} — {{ log.evidence_text[:120] }}{% endif %}</p>
+    {% endfor %}
+  </article>
+  {% endif %}
+
+  <article class="card" id="deal-form">
+    <h2>Deal flow</h2>
+    {% include "partials/investor_deal_form.html" %}
+  </article>
+
+  {% if documents %}
+  <article class="card">
+    <h2>Data room</h2>
+    {% for doc in documents %}
+    <p>{{ doc.kind }}: {{ doc.filename }}</p>
+    {% endfor %}
+  </article>
+  {% endif %}
+
+  {% if user.is_verified_investor %}
+  <p class="chip is-active">Verified investor</p>
+  {% endif %}
+</section>
+{% endblock %}

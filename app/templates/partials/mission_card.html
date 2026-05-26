@@ -1,0 +1,43 @@
+{% if mission %}
+<article class="mission-card card{% if mission.days_on_step and mission.days_on_step > 3 and not mission.finished %} mission-card--stuck{% endif %}">
+  {% if mission.startup and not mission.finished %}
+  <p class="eyebrow">Сейчас</p>
+  <h2 class="mission-card__title">{{ mission.current_step.label }}</h2>
+  <p class="muted mission-card__hint">{{ mission.current_step.hint }}</p>
+  {% if mission.progress %}
+  <div class="mission-card__bar">
+    <div class="mission-card__fill" style="width: {{ mission.progress.percent }}%"></div>
+  </div>
+  <p class="mission-card__meta">
+    {{ mission.progress.done }}/{{ mission.progress.total }} · {{ mission.progress.percent }}%
+    {% if mission.days_on_step is not none %}
+    · {{ mission.days_on_step }} дн. на шаге
+    {% endif %}
+  </p>
+  {% endif %}
+  {% if mission.weekly_goals %}
+  <p class="mission-card__goals">
+    Задачи на неделю: <strong>{{ mission.weekly_goals.done }}/{{ mission.weekly_goals.total }}</strong>
+  </p>
+  {% endif %}
+  <div class="mission-card__actions">
+    <a class="btn btn-primary" href="{{ mission.cta_url }}">{{ mission.cta_label }}</a>
+    <a class="btn btn-ghost" href="{{ mission.ai_url }}">Спросить AI</a>
+    <a class="btn btn-ghost" href="{{ mission.feed_url }}">Апдейт</a>
+  </div>
+  {% elif mission.startup and mission.finished %}
+  <p class="eyebrow">Путь пройден</p>
+  <h2 class="mission-card__title">{{ mission.startup.name }}</h2>
+  <p class="muted">Ветка к деньгам закрыта — делись результатом в ленте.</p>
+  <div class="mission-card__actions">
+    <a class="btn btn-primary" href="{{ mission.progress_url }}">Карта</a>
+    <a class="btn btn-ghost" href="{{ mission.feed_url }}">Написать пост</a>
+  </div>
+  {% else %}
+  <p class="eyebrow">Следующий шаг</p>
+  <h2 class="mission-card__title">Запусти идею</h2>
+  <p class="muted">Опиши проект в AI — получишь персональную карту к деньгам.</p>
+  <a class="btn btn-primary full" href="{{ mission.cta_url }}">{{ mission.cta_label }}</a>
+  {% endif %}
+</article>
+{% endif %}

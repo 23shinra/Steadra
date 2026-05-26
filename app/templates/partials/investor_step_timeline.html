@@ -1,0 +1,55 @@
+<div class="investor-timeline">
+  <table class="investor-timeline__table">
+    <thead>
+      <tr>
+        <th>Шаг</th>
+        <th>Статус</th>
+        <th>Дата</th>
+        <th>Дней</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for step in step_timeline %}
+      <tr class="investor-timeline__row is-{{ step.status }}">
+        <td>
+          <strong>{{ loop.index }}. {{ step.label }}</strong>
+          {% if step.evidence_url %}
+          <a class="investor-timeline__proof" href="{{ step.evidence_url }}" target="_blank" rel="noopener">proof</a>
+          {% endif %}
+        </td>
+        <td>
+          {% if step.status == 'done' %}
+          <span class="investor-timeline__status is-done">Закрыт</span>
+          {% elif step.status == 'active' %}
+          <span class="investor-timeline__status is-active">В работе</span>
+          {% else %}
+          <span class="investor-timeline__status is-pending">Ожидает</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if step.completed_at %}
+          {{ step.completed_at.strftime('%d.%m.%Y') }}
+          {% elif step.status == 'active' %}
+          —
+          {% else %}
+          —
+          {% endif %}
+        </td>
+        <td>
+          {% if step.days is not none %}
+          <strong>{{ step.days }}</strong>
+          {% if step.status == 'active' %}
+          <span class="muted"> (на шаге)</span>
+          {% endif %}
+          {% else %}
+          —
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if total_completed_days %}
+  <p class="investor-timeline__total muted">Всего на закрытые шаги: <strong>{{ total_completed_days }}</strong> дн.</p>
+  {% endif %}
+</div>

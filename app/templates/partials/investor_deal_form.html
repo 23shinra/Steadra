@@ -1,0 +1,6 @@
+<form method="post" action="{{ url_for('extensions.investor_deal_update', startup_id=startup.id) }}" hx-post="{{ url_for('extensions.investor_deal_update', startup_id=startup.id) }}" hx-target="#deal-form" hx-swap="innerHTML">
+  {{ form.csrf_token }}
+  {{ form.status(class_="input") }}
+  {{ form.notes(class_="input", rows="3", placeholder="Приватные заметки") }}
+  <button type="submit" class="btn btn-ghost">Сохранить deal flow</button>
+</form>

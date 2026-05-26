@@ -1,0 +1,20 @@
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.progress_page', startup=startup.id) }}">← Карта</a>
+    <h1>{% if deck_stage == 'pre_mvp' %}Pre-MVP deck{% elif deck_stage == 'validated' %}Validated deck{% else %}Pitch outline{% endif %} · {{ startup.name }}</h1>
+    {% if outline and outline.stage %}
+    <p class="muted">Стадия: {{ outline.stage }}</p>
+    {% endif %}
+  </header>
+  {% if outline and outline.slides %}
+  {% for slide in outline.slides %}
+  <article class="card">
+    <h2>{{ slide.num }}. {{ slide.title }}</h2>
+    <ul>{% for b in slide.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+  </article>
+  {% endfor %}
+  {% else %}
+  <p class="muted">Не удалось сгенерировать outline.</p>
+  {% endif %}
+  <p class="hint">AI-запросов осталось: {{ ai_remaining }}</p>
+</section>

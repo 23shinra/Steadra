@@ -1,0 +1,25 @@
+{% set invitee = invitee|default(feed_item.activity.user if feed_item is defined else none) %}
+{% set invite_status = invite_status|default(feed_item.invite_status if feed_item is defined else 'hidden') %}
+{% set activity_id = activity_id|default(feed_item.activity.id if feed_item is defined else '') %}
+{% set invite_startup = invite_startup|default(feed_item.invite_startup if feed_item is defined else none) %}
+{% if invite_status == 'ready' %}
+<form
+  class="team-invite-form"
+  hx-post="{{ url_for('main.team_invite', user_id=invitee.id) }}"
+  hx-target="#team-invite-{{ activity_id }}"
+  hx-swap="innerHTML"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <input type="hidden" name="activity_id" value="{{ activity_id }}" />
+  <button class="btn btn-ghost team-invite-btn" type="submit">
+    <span aria-hidden="true">👥</span>
+    Пригласить в команду
+  </button>
+</form>
+{% elif invite_status == 'pending' %}
+<p class="team-invite-status team-invite-status--pending">Приглашение отправлено · ждём ответ</p>
+{% elif invite_status == 'member' %}
+<p class="team-invite-status team-invite-status--member">Уже в вашей команде</p>
+{% elif invite_status == 'no_startup' %}
+<p class="team-invite-status muted">Создай проект, чтобы звать в команду</p>
+{% endif %}

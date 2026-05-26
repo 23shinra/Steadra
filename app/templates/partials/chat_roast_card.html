@@ -1,0 +1,28 @@
+{% if roast %}
+<article class="roast-result chat-roast-card">
+  <div class="scoreline"><span>Idea survival</span><strong>{{ roast.score }}%</strong></div>
+  <h3>{{ roast.verdict }}</h3>
+  {% if roast.risks %}
+  <section>
+    <h4>Риски</h4>
+    {% for item in roast.risks %}<p>• {{ item }}</p>{% endfor %}
+  </section>
+  {% endif %}
+  {% if roast.alternatives %}
+  <section class="roast-alternatives">
+    <h4>Альтернативы</h4>
+    <p class="roast-alternatives__hint">Нажми на вариант — прожарим его</p>
+    <div class="roast-alternatives__list">
+      {% for item in roast.alternatives %}
+        {% if item.strip() %}
+        <button type="button" class="roast-alt-btn" data-idea="{{ item.strip() }}">
+          <span class="roast-alt-btn__text">{{ item.strip() }}</span>
+          <span class="roast-alt-btn__go" aria-hidden="true">→</span>
+        </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</article>
+{% endif %}

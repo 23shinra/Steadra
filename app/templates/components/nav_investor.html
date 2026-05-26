@@ -1,0 +1,26 @@
+<nav class="tabbar tabbar--investor" aria-label="Навигация инвестора">
+  <a class="tab {% if active_tab == 'candidates' %}is-active{% endif %}" href="{{ url_for('investor.candidates') }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5"/></svg>
+    </span>
+    <small>Кандидаты</small>
+  </a>
+  <a class="tab {% if active_tab == 'favorites' %}is-active{% endif %}" href="{{ url_for('investor.favorites') }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 3.5 14.8 9l6.2.9-4.5 4.4 1.1 6.2L12 17.8 6.4 20.5l1.1-6.2L3 9.9 9.2 9z"/></svg>
+    </span>
+    <small>Избранное</small>
+  </a>
+  <a class="tab {% if active_tab == 'leaderboard' %}is-active{% endif %}" href="{{ url_for('main.leaderboard') }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M4 19h16"/></svg>
+    </span>
+    <small>Топ</small>
+  </a>
+  <a class="tab {% if active_tab == 'profile' %}is-active{% endif %}" href="{{ url_for('main.profile') }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
+    </span>
+    <small>Профиль</small>
+  </a>
+</nav>

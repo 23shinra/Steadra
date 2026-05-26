@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Уведомления · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.home') }}">← Главная</a>
+    <h1>Уведомления</h1>
+  </header>
+
+  {% if notifications %}
+  <form method="post" action="{{ url_for('main.notifications_read_all') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button type="submit" class="btn btn-ghost full">Прочитать все</button>
+  </form>
+  <div class="notif-list">
+    {% for item in notifications %}
+    <article class="notif-item{% if not item.read_at %} is-unread{% endif %}">
+      <div class="notif-item__main">
+        <strong>{{ item.title }}</strong>
+        {% if item.body %}<p class="muted">{{ item.body }}</p>{% endif %}
+        <small class="muted">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+      </div>
+      <div class="notif-item__actions">
+        <a class="btn btn-primary btn-sm" href="{{ item.href }}">Открыть</a>
+        {% if not item.read_at %}
+        <form method="post" action="{{ url_for('main.notification_read', notification_id=item.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="btn btn-ghost btn-sm">Прочитано</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <article class="empty-card">
+    <strong>Пока пусто</strong>
+    <p>Здесь появятся напоминания о шаге, дайджесты и приглашения в команду.</p>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}

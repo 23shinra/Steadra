@@ -1,26 +1,31 @@
-## Global Virtual Hub (PWA макет)
+# Kangaroo
 
-Мобильный **PWA-прототип** (пока без полноценной БД-логики) на **Flask + HTMX** по ТЗ из `global_virtual_hub_concept.txt`.
+PWA for startup founders: social progress feed, leaderboard, and an AI roast agent that challenges ideas through the project journey.
 
-### Что уже есть
-
-- **PWA-обвязка**: `manifest.json`, `service-worker.js`, кнопка “Установить” (когда браузер разрешит)
-- **Мобильный UI**: “одна оболочка + HTMX-подгрузка” и нижняя навигация
-- **Экраны-модули (макет)**:
-  - Лента специалистов
-  - Marketplace заказов + форма “создать заказ” (CSRF + HTMX)
-  - Команды/стартап-комнаты
-  - Паспорт сделок/проектов
-  - Рост/уровни
-  - AI-слой
-  - Профиль
-
-### Как запустить
+## Run
 
 ```bash
-python -m pip install -r requirements.txt
-python run.py
+python -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+flask --app run.py run
 ```
 
-Откройте `http://127.0.0.1:5000`.
+## Environment
 
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | SQLite default; use PostgreSQL in prod |
+| `REDIS_URL` | Optional Redis for OTP cache |
+| `SMS_PROVIDER` | `mock` (default) or `twilio` |
+| `SMS_API_KEY` | Twilio `account_sid:auth_token` |
+| `OPENAI_API_KEY` | Required for AI features |
+| `INVESTOR_INVITE_CODES` | Comma-separated codes for investor signup |
+| `AI_FREE_MONTHLY_LIMIT` | Free tier AI requests per month (default 30) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web push |
+
+## Migrations
+
+```bash
+flask --app run.py db upgrade
+```

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Вход · Kangaroo{% endblock %}
+{% block content %}
+<section class="auth-screen">
+  <a class="back-link" href="{{ url_for('main.onboarding') }}">← Назад</a>
+  <div class="auth-card">
+    <div class="logo-orb">K</div>
+    <p class="eyebrow">Вход по SMS</p>
+    <h1>Вход по телефону</h1>
+    <p>Введи номер — отправим одноразовый код.</p>
+    <div id="auth-step">
+      {% if otp_form %}
+        {% include "auth/_otp_form.html" %}
+      {% else %}
+        {% include "auth/_phone_form.html" %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

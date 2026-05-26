@@ -1,0 +1,18 @@
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('extensions.messages_inbox') }}">← Inbox</a>
+    <h1>{{ other.name }}</h1>
+  </header>
+  <div class="messages-list stack">
+    {% for msg in messages %}
+    {% with viewer=user %}
+    {% include "partials/message_bubble.html" %}
+    {% endwith %}
+    {% endfor %}
+  </div>
+  <form method="post" hx-post="{{ url_for('extensions.messages_send', other_id=other.id) }}" hx-target=".messages-list" hx-swap="beforeend">
+    {{ form.csrf_token }}
+    {{ form.body(class_="input", rows="2", placeholder="Сообщение...") }}
+    <button type="submit" class="btn btn-primary">Отправить</button>
+  </form>
+</section>

@@ -1,0 +1,13 @@
+<nav class="admin-nav">
+  <a class="admin-nav__link{% if admin_nav == 'dashboard' %} is-active{% endif %}" href="{{ url_for('admin.dashboard') }}">Панель</a>
+  <a class="admin-nav__link{% if admin_nav == 'validation' %} is-active{% endif %}" href="{{ url_for('admin.validation_page') }}">
+    Валидация шагов{% if pending_count %} <span class="admin-nav__badge">{{ pending_count }}</span>{% endif %}
+  </a>
+  <a class="admin-nav__link{% if admin_nav == 'validation_too' %} is-active{% endif %}" href="{{ url_for('admin.validation_too_page') }}">
+    Валидация ТОО{% if pending_too_count %} <span class="admin-nav__badge">{{ pending_too_count }}</span>{% endif %}
+  </a>
+  <form method="post" action="{{ url_for('admin.logout') }}" class="admin-nav__logout">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button class="btn btn-ghost btn-sm" type="submit">Выйти</button>
+  </form>
+</nav>

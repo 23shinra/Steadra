@@ -1,0 +1,49 @@
+{% if progress_startup and roadmap_branch %}
+<div class="progress-panel">
+  <div class="progress-panel__hero">
+    <p class="eyebrow">Путь к деньгам</p>
+    <h2>{{ progress_startup.name }}</h2>
+    <p class="muted">{{ progress_startup.tagline }}</p>
+    <div class="progress-panel__bar">
+      <div class="progress-panel__fill" style="width: {{ progress.percent }}%"></div>
+    </div>
+    <p class="progress-panel__meta">
+      {% if progress.finished %}
+        <strong>Ветка пройдена</strong> · 100%
+      {% else %}
+        <strong>{{ progress.done }}</strong> из <strong>{{ progress.total }}</strong> шагов · {{ progress.percent }}%
+      {% endif %}
+    </p>
+  </div>
+
+  <ol class="progress-tree">
+    {% for step in roadmap_branch %}
+    <li class="progress-tree__item is-{{ step.status }}">
+      <div class="progress-tree__marker">
+        <span class="progress-tree__dot"></span>
+        {% if not loop.last %}<span class="progress-tree__line"></span>{% endif %}
+      </div>
+      <div class="progress-tree__body">
+        <span class="progress-tree__step-num">Шаг {{ loop.index }}</span>
+        <strong class="progress-tree__label">{{ step.label }}</strong>
+        {% if step.status == 'done' %}
+          <span class="progress-tree__badge">Готово</span>
+        {% elif step.status == 'active' %}
+          <span class="progress-tree__badge is-active">Сейчас</span>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+
+  <div class="progress-panel__goal">
+    <span>Финал</span>
+    <strong>Получение денег</strong>
+  </div>
+</div>
+{% else %}
+<div class="progress-panel progress-panel--empty">
+  <p><strong>Прогресс появится после прожарки</strong></p>
+  <p class="muted">Опиши идею в чате, получи вердикт и нажми «Запустить путь».</p>
+</div>
+{% endif %}

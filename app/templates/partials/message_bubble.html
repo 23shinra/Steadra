@@ -1,0 +1,4 @@
+<div class="message-bubble {% if msg.sender_id == viewer.id %}is-own{% endif %}">
+  <p>{{ msg.body }}</p>
+  <small>{{ msg.created_at.strftime('%d.%m %H:%M') }}</small>
+</div>

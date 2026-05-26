@@ -1,0 +1,9 @@
+{% macro user_avatar(user, size='') %}
+<div class="avatar {{ size }}" aria-hidden="true">
+  {% if user.avatar_url %}
+    <img class="avatar-img" src="{{ user.avatar_url }}" alt="" loading="lazy" />
+  {% else %}
+    <span class="avatar-letter">{{ user.avatar or user.name[:1] }}</span>
+  {% endif %}
+</div>
+{% endmacro %}

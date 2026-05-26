@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "components/_avatar.html" import user_avatar %}
+{% from "components/_role_icon.html" import role_icon %}
+{% block title %}Редактировать профиль · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.profile') }}">← Профиль</a>
+    <p class="eyebrow">Настройки</p>
+    <h1>Редактировать</h1>
+  </header>
+
+  <div class="profile-edit-preview" id="avatar-preview">
+    {{ user_avatar(user, 'xl') }}
+    <p class="muted">Загрузи фото или останется буква от имени</p>
+  </div>
+
+  <form class="profile-form stack" method="post" action="{{ url_for('main.profile_edit_submit') }}" enctype="multipart/form-data">
+    {{ form.csrf_token }}
+
+    <div class="field">
+      <span>Аватар</span>
+      <label class="avatar-upload">
+        <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" />
+        <span class="avatar-upload__label">Выбрать фото</span>
+        <small>JPG, PNG, WEBP до 2 МБ</small>
+      </label>
+      {% if avatar_error %}<p class="form-error">{{ avatar_error }}</p>{% endif %}
+      {% if user.avatar_url %}
+      <label class="checkbox-row">
+        {{ form.remove_avatar() }}
+        <span>{{ form.remove_avatar.label.text }}</span>
+      </label>
+      {% endif %}
+    </div>
+
+    <div class="field">
+      {% if show_role_picker|default(true) %}
+      <span>Роль</span>
+      <div class="role-grid">
+        {% for role in roles %}
+        <label class="role-card {% if selected_role == role.id %}is-selected{% endif %}">
+          <input type="radio" name="role" value="{{ role.id }}" {% if selected_role == role.id %}checked{% endif %} />
+          <span class="role-card__icon">{{ role_icon(role.icon) }}</span>
+          <strong>{{ role.label }}</strong>
+        </label>
+        {% endfor %}
+      </div>
+      {% if form.role.errors %}<p class="form-error">{{ form.role.errors[0] }}</p>{% endif %}
+      {% else %}
+      <span>Роль</span>
+      <p class="investor-role-badge">Инвестор</p>
+      <input type="hidden" name="role" value="investor" />
+      {% endif %}
+    </div>
+
+    <div class="field">
+      <span>{{ form.name.label.text }}</span>
+      {{ form.name(class_="input", autocomplete="name") }}
+      {% if form.name.errors %}<p class="form-error">{{ form.name.errors[0] }}</p>{% endif %}
+    </div>
+
+    <p class="hint">Телефон: {{ user.phone }}</p>
+    <div id="phone-change-wrap">
+      {% with form=phone_form %}
+      {% include "partials/phone_change_form.html" %}
+      {% endwith %}
+    </div>
+
+    {% if achievements %}
+    <div class="achievements-grid">
+      <span>Достижения</span>
+      {% for item in achievements %}
+      <span class="chip {% if item.earned %}is-active{% endif %}" title="{{ item.achievement.description }}">{{ item.achievement.icon }} {{ item.achievement.title }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <button class="btn btn-primary full" type="submit">Сохранить</button>
+    <a class="btn btn-ghost full" href="{{ url_for('main.profile') }}">Отмена</a>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% set poll = feed_item.poll %}
+{% if poll %}
+<div class="poll-block" id="poll-block-{{ poll.poll.id }}">
+  <p class="poll-block__hypothesis"><strong>Гипотеза:</strong> {{ poll.poll.hypothesis }}</p>
+  <div class="poll-vote-row">
+    <form hx-post="{{ url_for('extensions.poll_vote', poll_id=poll.poll.id, choice='yes') }}"
+      hx-target="#poll-block-{{ poll.poll.id }}" hx-swap="outerHTML" class="inline-form">
+      <button type="submit" class="poll-vote-btn{% if poll.user_vote == 'yes' %} is-active{% endif %}">👍 Да ({{ poll.poll.yes_count }})</button>
+    </form>
+    <form hx-post="{{ url_for('extensions.poll_vote', poll_id=poll.poll.id, choice='maybe') }}"
+      hx-target="#poll-block-{{ poll.poll.id }}" hx-swap="outerHTML" class="inline-form">
+      <button type="submit" class="poll-vote-btn{% if poll.user_vote == 'maybe' %} is-active{% endif %}">🤔 Не уверен ({{ poll.poll.maybe_count }})</button>
+    </form>
+    <form hx-post="{{ url_for('extensions.poll_vote', poll_id=poll.poll.id, choice='no') }}"
+      hx-target="#poll-block-{{ poll.poll.id }}" hx-swap="outerHTML" class="inline-form">
+      <button type="submit" class="poll-vote-btn{% if poll.user_vote == 'no' %} is-active{% endif %}">👎 Нет ({{ poll.poll.no_count }})</button>
+    </form>
+  </div>
+  <div class="poll-verdict poll-verdict--{{ poll.poll.verdict }}">
+    <span class="poll-verdict__label">{{ poll.verdict_label }}</span>
+    <span class="poll-verdict__score">Score {{ poll.poll.score }}</span>
+    {% if poll.total_votes < 5 %}
+    <form hx-post="{{ url_for('extensions.poll_refresh', poll_id=poll.poll.id) }}"
+      hx-target="#poll-block-{{ poll.poll.id }}" hx-swap="outerHTML" class="inline-form">
+      <button type="submit" class="btn btn-ghost btn-sm">Обновить</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

@@ -1,0 +1,15 @@
+{% if show_validate and thread %}
+<form
+  class="chat-validate-actions"
+  method="post"
+  action="{{ url_for('main.ai_validate') }}"
+  hx-post="{{ url_for('main.ai_validate') }}"
+  hx-target="#chat-messages"
+  hx-swap="beforeend"
+>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+  <p class="chat-validate-actions__hint">Подтверди идею — откроется ветка шагов до получения денег.</p>
+  <button class="btn btn-primary" type="submit">Запустить путь</button>
+</form>
+{% endif %}

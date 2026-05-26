@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Админ · Kangaroo{% endblock %}
+{% block content %}
+<section class="auth-screen admin-screen">
+  <div class="auth-card admin-card">
+    <div class="logo-orb">A</div>
+    <p class="eyebrow">Admin</p>
+    <h1>Вход в админку</h1>
+    <p>Только для администраторов Kangaroo.</p>
+    {% include "admin/_phone_form.html" %}
+  </div>
+</section>
+{% endblock %}

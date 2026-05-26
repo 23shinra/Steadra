@@ -1,0 +1,29 @@
+{% if q and (results.users or results.startups or results.activities) %}
+{% from "components/_too_badge.html" import too_badge %}
+<section class="stack">
+  {% if results.users %}
+  <h2>Фаундеры</h2>
+  {% for u in results.users %}
+  <a href="{{ url_for('main.user_profile', user_id=u.id) }}" class="card">{{ u.name }} · {{ u.role|user_role }}</a>
+  {% endfor %}
+  {% endif %}
+  {% if results.startups %}
+  <h2>Стартапы</h2>
+  {% for s in results.startups %}
+  <a href="{{ url_for('main.startup_detail', startup_id=s.id) }}" class="card">
+    <strong>{{ s.name }}</strong>
+    {% if is_investor_user|default(false) %}{{ too_badge(s|startup_too) }}{% endif %}
+    <p class="muted">{{ s.tagline }}</p>
+  </a>
+  {% endfor %}
+  {% endif %}
+  {% if results.activities %}
+  <h2>Посты</h2>
+  {% for a in results.activities %}
+  <article class="card"><strong>{{ a.title }}</strong><p>{{ a.body[:160] }}</p></article>
+  {% endfor %}
+  {% endif %}
+</section>
+{% elif q %}
+<p class="muted">Ничего не найдено.</p>
+{% endif %}

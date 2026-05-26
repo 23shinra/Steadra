@@ -1,221 +1,350 @@
-from __future__ import annotations
+import re
 
-import secrets
-from datetime import datetime
+from flask import Blueprint, redirect, render_template, request, session, url_for
+from flask_wtf import FlaskForm
+from wtforms import IntegerField, SelectField, StringField, TextAreaField
+from wtforms.validators import DataRequired, Length, NumberRange, ValidationError
 
-from flask import Blueprint, make_response, redirect, render_template, request, session, url_for
-from werkzeug.security import check_password_hash, generate_password_hash
-
-from ..forms import CodeForm, PasswordForm, PhoneForm, SkillsForm
+from ..access import ACCOUNT_INVESTOR, is_investor, normalize_account_type
 from ..models import db
-from ..models.entities import AuthSession, User
+from ..models.entities import User
+from ..roles import ROLES, founder_roles, is_valid_role_id, role_id_for_user, role_label_for_id, INVESTOR_ROLE_LABEL
+from ..services.otp import normalize_phone, send_otp, verify_otp
 
 bp = Blueprint("auth", __name__)
 
-COOKIE_NAME = "steadra_session"
+EXPERIENCE_CHOICES = [
+    (0, "Без коммерческого опыта"),
+    (1, "До 1 года"),
+    (2, "1–2 года"),
+    (3, "3–5 лет"),
+    (5, "5+ лет"),
+]
+
+REGIONS = [
+    ("", "Не указан"),
+    ("almaty", "Алматы"),
+    ("astana", "Астана"),
+    ("shymkent", "Шымкент"),
+    ("karaganda", "Караганда"),
+    ("other", "Другой регион"),
+]
 
 
-def _is_htmx() -> bool:
-    return request.headers.get("HX-Request") == "true"
+class PhoneForm(FlaskForm):
+    phone = StringField("Телефон", validators=[DataRequired()])
+
+    def validate_phone(self, field):
+        digits = normalize_phone(field.data or "")
+        field.data = digits
+        if len(digits) != 11 or not digits.startswith("7"):
+            raise ValidationError("Введите казахстанский номер: 11 цифр, начиная с 7.")
 
 
-def _hx_redirect(location: str):
-    # HTMX-friendly redirect
-    resp = make_response("", 200)
-    resp.headers["HX-Redirect"] = location
-    return resp
+class OtpForm(FlaskForm):
+    phone = StringField(validators=[DataRequired()])
+    code = StringField("Код из SMS", validators=[DataRequired(), Length(min=4, max=6)])
 
 
-def _normalize_phone(raw: str) -> str:
-    digits = "".join(ch for ch in (raw or "") if ch.isdigit())
-    if digits.startswith("8") and len(digits) == 11:
-        digits = "7" + digits[1:]
-    if digits and not digits.startswith("+"):
-        digits = "+" + digits
-    return digits
+class ProfileOnboardingForm(FlaskForm):
+    name = StringField("Как тебя зовут?", validators=[DataRequired(), Length(min=2, max=80)])
+    age = IntegerField("Сколько лет", validators=[DataRequired(), NumberRange(min=14, max=99)])
+    role = StringField("Сфера", validators=[DataRequired()])
+    experience_years = SelectField(
+        "Опыт в выбранной сфере",
+        choices=EXPERIENCE_CHOICES,
+        coerce=int,
+        validators=[DataRequired()],
+    )
+    experience_text = TextAreaField(
+        "Чем занимался и что умеешь",
+        validators=[DataRequired(), Length(min=10, max=1200)],
+    )
+    account_type = SelectField(
+        "Тип аккаунта",
+        choices=[("user", "Основатель"), ("investor", "Инвестор")],
+        default="user",
+    )
+    investor_invite_code = StringField("Код приглашения инвестора", validators=[Length(max=40)])
+    region = SelectField("Город / регион", choices=REGIONS, default="")
+    investor_fund_name = StringField("Фонд / компания", validators=[Length(max=160)])
+    investor_linkedin = StringField("LinkedIn", validators=[Length(max=255)])
+
+    def validate_role(self, field):
+        if self.account_type.data == "investor":
+            return
+        if not is_valid_role_id(field.data):
+            raise ValidationError("Выбери сферу из списка.")
+
+    def validate_investor_invite_code(self, field):
+        if self.account_type.data != "investor":
+            return
+        from flask import current_app
+
+        codes = {
+            c.strip()
+            for c in (current_app.config.get("INVESTOR_INVITE_CODES") or "").split(",")
+            if c.strip()
+        }
+        if codes and (field.data or "").strip() not in codes:
+            raise ValidationError("Неверный код приглашения для инвестора.")
 
 
-def current_user() -> User | None:
-    token = request.cookies.get(COOKIE_NAME)
-    if not token:
+class PhoneChangeForm(FlaskForm):
+    new_phone = StringField("Новый телефон", validators=[DataRequired()])
+    code = StringField("Код из SMS", validators=[DataRequired(), Length(min=4, max=6)])
+
+    def validate_new_phone(self, field):
+        digits = normalize_phone(field.data or "")
+        field.data = digits
+        if len(digits) != 11 or not digits.startswith("7"):
+            raise ValidationError("Введите казахстанский номер: 11 цифр, начиная с 7.")
+        existing = User.query.filter_by(phone=digits).first()
+        if existing:
+            raise ValidationError("Этот номер уже занят.")
+
+
+def session_user() -> User | None:
+    user_id = session.get("user_id")
+    if not user_id:
         return None
-    s = AuthSession.query.filter_by(token=token, revoked_at=None).first()
-    if not s:
-        return None
-    s.last_seen_at = datetime.utcnow()
-    db.session.commit()
-    return db.session.get(User, s.user_id)
+    return db.session.get(User, user_id)
 
 
-@bp.get("/logout")
-def logout():
-    token = request.cookies.get(COOKIE_NAME)
-    if token:
-        s = AuthSession.query.filter_by(token=token, revoked_at=None).first()
-        if s:
-            s.revoked_at = datetime.utcnow()
-            db.session.commit()
-    resp = redirect(url_for("auth.start"))
-    resp.delete_cookie(COOKIE_NAME)
-    return resp
+def post_login_redirect():
+    user = session_user()
+    if user and not user.onboarding_done:
+        return url_for("auth.profile_onboarding")
+    if user and getattr(user, "account_type", "user") == "investor":
+        return url_for("investor.candidates")
+    return url_for("main.home")
 
 
-@bp.get("/auth")
-def start():
-    # If already authed, go straight to chat
-    if current_user():
-        return redirect(url_for("main.ui_tab", tab="chat"))
-    form = PhoneForm()
-    tpl = "auth/start.html" if not _is_htmx() else "auth/partials/phone.html"
-    return render_template(tpl, form=form, hide_nav=True)
-
-
-@bp.post("/auth/phone")
-def submit_phone():
-    form = PhoneForm()
-    if not form.validate_on_submit():
-        return render_template("auth/partials/phone.html", form=form, hide_nav=True)
-
-    phone = _normalize_phone(form.phone.data)
-    digits = "".join(ch for ch in phone if ch.isdigit())
-    if len(digits) != 11 or not digits.startswith("7"):
-        form.phone.errors.append("Введите номер в формате +7 (XXX) XXX-XX-XX")
-        return render_template("auth/partials/phone.html", form=form, hide_nav=True)
-    session["auth_phone"] = phone
-    session["auth_sms_ok"] = False
-
-    # In real life: send SMS. For prototype: code is 1234.
-    if _is_htmx():
-        return _hx_redirect(url_for("auth.code"))
-    return redirect(url_for("auth.code"))
-
-
+@bp.get("/login")
 @bp.get("/auth/code")
-def code():
-    if current_user():
-        return redirect(url_for("main.ui_tab", tab="chat"))
-    if not session.get("auth_phone"):
-        return redirect(url_for("auth.start"))
-    form = CodeForm()
-    tpl = "auth/code.html" if not _is_htmx() else "auth/partials/code.html"
-    return render_template(tpl, form=form, phone=session.get("auth_phone"), hide_nav=True)
+def login():
+    form = PhoneForm()
+    otp_form = None
+    phone = session.pop("pending_phone", None)
+    if phone:
+        otp_form = OtpForm(phone=phone)
+    return render_template(
+        "auth/login.html",
+        form=form,
+        otp_form=otp_form,
+        pending_phone=phone,
+        hide_nav=True,
+    )
 
 
+@bp.post("/login")
 @bp.post("/auth/code")
-def submit_code():
-    if not session.get("auth_phone"):
-        return redirect(url_for("auth.start"))
-    form = CodeForm()
+def submit_login():
+    form = PhoneForm()
     if not form.validate_on_submit():
-        return render_template("auth/partials/code.html", form=form, phone=session.get("auth_phone"), hide_nav=True)
+        return render_template("auth/_phone_form.html", form=form), 422
 
-    if form.code.data.strip() != "1234":
-        form.code.errors.append("Неверный код. Для теста используйте 1234.")
-        return render_template("auth/partials/code.html", form=form, phone=session.get("auth_phone"), hide_nav=True)
+    phone = form.phone.data.strip()
+    ok, error_or_code = send_otp(phone, purpose="login")
+    if not ok:
+        return render_template("auth/_phone_form.html", form=form, error=error_or_code), 422
 
-    session["auth_sms_ok"] = True
-    if _is_htmx():
-        return _hx_redirect(url_for("auth.password"))
-    return redirect(url_for("auth.password"))
-
-
-@bp.get("/auth/password")
-def password():
-    if current_user():
-        return redirect(url_for("main.ui_tab", tab="chat"))
-    if not session.get("auth_phone") or not session.get("auth_sms_ok"):
-        return redirect(url_for("auth.start"))
-    form = PasswordForm()
-    tpl = "auth/password.html" if not _is_htmx() else "auth/partials/password.html"
-    return render_template(tpl, form=form, phone=session.get("auth_phone"), hide_nav=True)
+    session["pending_phone"] = phone
+    otp_form = OtpForm(phone=phone)
+    demo_hint = error_or_code
+    return render_template(
+        "auth/_otp_form.html",
+        otp_form=otp_form,
+        phone=phone,
+        demo_hint=demo_hint,
+    )
 
 
-@bp.post("/auth/password")
-def submit_password():
-    if not session.get("auth_phone") or not session.get("auth_sms_ok"):
-        return redirect(url_for("auth.start"))
-    phone = session["auth_phone"]
-
-    form = PasswordForm()
+@bp.post("/auth/verify")
+def verify_login():
+    form = OtpForm()
     if not form.validate_on_submit():
-        return render_template("auth/partials/password.html", form=form, phone=phone, hide_nav=True)
+        return render_template("auth/_otp_form.html", otp_form=form, phone=form.phone.data), 422
 
+    phone = normalize_phone(form.phone.data)
+    if not verify_otp(phone, form.code.data, purpose="login"):
+        return render_template(
+            "auth/_otp_form.html",
+            otp_form=form,
+            phone=phone,
+            error="Неверный или просроченный код.",
+        ), 422
+
+    session.pop("pending_phone", None)
     user = User.query.filter_by(phone=phone).first()
-    if user and user.password_hash:
-        if not check_password_hash(user.password_hash, form.password.data):
-            form.password.errors.append("Неверный пароль.")
-            return render_template("auth/partials/password.html", form=form, phone=phone, hide_nav=True)
-        # If user already completed profile, skip skills step.
-        if user.full_name and user.skills:
-            token = secrets.token_urlsafe(32)
-            db_sess = AuthSession(token=token, user_id=user.id)
-            db.session.add(db_sess)
-            db.session.commit()
-
-            session.pop("auth_phone", None)
-            session.pop("auth_sms_ok", None)
-            session.pop("auth_user_id", None)
-
-            resp = _hx_redirect(url_for("main.ui_tab", tab="chat")) if _is_htmx() else redirect(url_for("main.ui_tab", tab="chat"))
-            resp.set_cookie(COOKIE_NAME, token, httponly=True, samesite="Lax", max_age=60 * 60 * 24 * 30)
-            return resp
-    else:
-        if not user:
-            user = User(phone=phone, full_name="")
-            db.session.add(user)
-        user.password_hash = generate_password_hash(form.password.data)
+    if not user:
+        user = User(
+            name="Founder",
+            phone=phone,
+            role="Founder",
+            avatar="K",
+            score=0,
+            streak=0,
+            onboarding_done=False,
+        )
+        db.session.add(user)
         db.session.commit()
 
-    session["auth_user_id"] = user.id
-    if _is_htmx():
-        return _hx_redirect(url_for("auth.skills"))
-    return redirect(url_for("auth.skills"))
+    session["user_id"] = user.id
+    target = post_login_redirect()
+    if request.headers.get("HX-Request"):
+        return "", 204, {"HX-Redirect": target}
+    return redirect(target)
 
 
-@bp.get("/auth/skills")
-def skills():
-    if current_user():
-        return redirect(url_for("main.ui_tab", tab="chat"))
-    if not session.get("auth_user_id"):
-        return redirect(url_for("auth.start"))
-    user = db.session.get(User, session["auth_user_id"])
-    if user and user.full_name and user.skills:
-        return redirect(url_for("main.ui_tab", tab="chat"))
-    form = SkillsForm()
-    if user:
-        form.full_name.data = user.full_name or ""
-        form.skills.data = [s.strip() for s in (user.skills or "").split(",") if s.strip()]
-    tpl = "auth/skills.html" if not _is_htmx() else "auth/partials/skills.html"
-    return render_template(tpl, form=form, hide_nav=True)
-
-
-@bp.post("/auth/skills")
-def submit_skills():
-    if not session.get("auth_user_id"):
-        return redirect(url_for("auth.start"))
-    form = SkillsForm()
-    if not form.validate_on_submit():
-        return render_template("auth/partials/skills.html", form=form, hide_nav=True)
-
-    user = db.session.get(User, session["auth_user_id"])
+@bp.get("/onboarding/profile")
+def profile_onboarding():
+    user = session_user()
     if not user:
-        return redirect(url_for("auth.start"))
+        return redirect(url_for("auth.login"))
+    if user.onboarding_done:
+        return redirect(url_for("main.home"))
+    form = ProfileOnboardingForm()
+    if is_investor(user):
+        form.role.data = "investor"
+        form.account_type.data = "investor"
+    else:
+        form.role.data = role_id_for_user(user.role)
+        form.account_type.data = "user"
+    if user.name != "Founder":
+        form.name.data = user.name
+    return render_template(
+        "auth/profile_onboarding.html",
+        form=form,
+        roles=founder_roles(),
+        show_role_picker=not is_investor(user),
+        is_investor_user=is_investor(user),
+        hide_nav=True,
+    )
 
-    user.full_name = form.full_name.data.strip()
-    user.skills = ", ".join(form.skills.data)
+
+@bp.post("/onboarding/profile")
+def profile_onboarding_submit():
+    user = session_user()
+    if not user:
+        return redirect(url_for("auth.login"))
+    form = ProfileOnboardingForm()
+    wants_investor = form.account_type.data == "investor"
+    if wants_investor:
+        form.role.data = "investor"
+        form.experience_years.data = 0
+        form.experience_text.data = "—"
+    if not form.validate_on_submit():
+        return render_template(
+            "auth/profile_onboarding.html",
+            form=form,
+            roles=founder_roles(),
+            show_role_picker=not wants_investor,
+            is_investor_user=wants_investor,
+            hide_nav=True,
+        ), 422
+
+    name = form.name.data.strip()
+    user.name = name
+    user.avatar = (name[0] or "K").upper()
+    user.age = form.age.data
+    user.region = form.region.data or None
+    user.account_type = normalize_account_type(
+        ACCOUNT_INVESTOR if wants_investor else "user"
+    )
+    if wants_investor:
+        user.role = INVESTOR_ROLE_LABEL
+        user.experience_years = None
+        user.experience_text = None
+        user.investor_fund_name = (form.investor_fund_name.data or "").strip() or None
+        user.investor_linkedin = (form.investor_linkedin.data or "").strip() or None
+    else:
+        user.role = role_label_for_id(form.role.data)
+        user.experience_years = form.experience_years.data or 0
+        user.experience_text = form.experience_text.data.strip()
+    user.onboarding_done = True
     db.session.commit()
+    if is_investor(user):
+        return redirect(url_for("investor.candidates"))
+    return redirect(url_for("main.ai", onboarding=1))
 
-    token = secrets.token_urlsafe(32)
-    db_sess = AuthSession(token=token, user_id=user.id)
-    db.session.add(db_sess)
+
+@bp.post("/profile/phone/request")
+def phone_change_request():
+    user = session_user()
+    if not user:
+        return redirect(url_for("auth.login"))
+    form = PhoneChangeForm()
+    if not form.validate_on_submit():
+        return render_template(
+            "partials/phone_change_form.html",
+            form=form,
+            user=user,
+            error=form.new_phone.errors[0] if form.new_phone.errors else "Проверь номер.",
+        ), 422
+    ok, error_or_code = send_otp(form.new_phone.data, purpose="phone_change")
+    if not ok:
+        return render_template(
+            "partials/phone_change_form.html",
+            form=form,
+            user=user,
+            error=error_or_code,
+        ), 422
+    session["pending_new_phone"] = form.new_phone.data
+    return render_template(
+        "partials/phone_change_form.html",
+        form=form,
+        user=user,
+        code_sent=True,
+        demo_hint=error_or_code,
+        new_phone=form.new_phone.data,
+    )
+
+
+@bp.post("/profile/phone/confirm")
+def phone_change_confirm():
+    user = session_user()
+    if not user:
+        return redirect(url_for("auth.login"))
+    form = PhoneChangeForm()
+    new_phone = session.get("pending_new_phone") or form.new_phone.data
+    form.new_phone.data = new_phone
+    if not form.validate_on_submit():
+        return render_template(
+            "partials/phone_change_form.html",
+            form=form,
+            user=user,
+            code_sent=True,
+            new_phone=new_phone,
+            error=form.code.errors[0] if form.code.errors else "Проверь код.",
+        ), 422
+    if not verify_otp(new_phone, form.code.data, purpose="phone_change"):
+        return render_template(
+            "partials/phone_change_form.html",
+            form=form,
+            user=user,
+            code_sent=True,
+            new_phone=new_phone,
+            error="Неверный или просроченный код.",
+        ), 422
+    user.phone = normalize_phone(new_phone)
+    session.pop("pending_new_phone", None)
     db.session.commit()
+    flash_msg = "Телефон обновлён."
+    if request.headers.get("HX-Request"):
+        return render_template(
+            "partials/phone_change_form.html",
+            form=PhoneChangeForm(),
+            user=user,
+            success=flash_msg,
+        )
+    from flask import flash
 
-    # Clear temporary auth flow state
-    session.pop("auth_phone", None)
-    session.pop("auth_sms_ok", None)
-    session.pop("auth_user_id", None)
+    flash(flash_msg, "success")
+    return redirect(url_for("main.profile_edit"))
 
-    resp = _hx_redirect(url_for("main.ui_tab", tab="chat")) if _is_htmx() else redirect(url_for("main.ui_tab", tab="chat"))
-    resp.set_cookie(COOKIE_NAME, token, httponly=True, samesite="Lax", max_age=60 * 60 * 24 * 30)
-    return resp
 
+@bp.post("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("main.onboarding"))

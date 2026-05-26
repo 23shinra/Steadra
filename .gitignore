@@ -3,22 +3,22 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-
-# Flask / instance data
 instance/
-
-# Local SQLite DB (if created)
+instance/uploads/
 *.db
-
-# Python packaging artifacts
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 build/
 dist/
 *.egg-info/
-
-# OS / editor
+.env
+.env.*
+!.env.example
+*.env.local
 .DS_Store
 Thumbs.db
 .cursor/
+var/
+=1.14.0
+=1.40.0

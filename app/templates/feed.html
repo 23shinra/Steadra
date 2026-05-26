@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Лента · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <p class="eyebrow">Community pulse</p>
+    <h1>Что сделали фаундеры</h1>
+  </header>
+
+  <div class="feed-compose-wrap" data-feed-compose>
+    <button type="button" class="feed-compose-trigger" data-feed-compose-open aria-expanded="false" aria-controls="feed-compose-panel">
+      <span class="feed-compose-trigger__icon" aria-hidden="true">✎</span>
+      <span class="feed-compose-trigger__label">Сделать пост</span>
+    </button>
+    <div class="feed-compose-panel" id="feed-compose-panel">
+      <form
+        id="feed-compose-form"
+        class="feed-compose"
+        method="post"
+        action="{{ url_for('main.feed_post') }}"
+        hx-post="{{ url_for('main.feed_post') }}"
+        hx-target="#feed-list"
+        hx-swap="afterbegin"
+      >
+        {{ post_form.csrf_token }}
+        <div class="feed-compose__head">
+          <span>Новый пост</span>
+          <button type="button" class="feed-compose__close" data-feed-compose-close aria-label="Свернуть">×</button>
+        </div>
+        <label class="field">
+          {{ post_form.title(class_="input", placeholder="Заголовок (необязательно)") }}
+        </label>
+        <label class="field">
+          {{ post_form.body(class_="input feed-compose__body", rows="3", placeholder="Что сделал, что спросить, что запустил...") }}
+        </label>
+        <label class="field">
+          {{ post_form.kind(class_="input") }}
+        </label>
+        <button class="btn btn-primary" type="submit">Опубликовать</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="filter-row" data-feed-filters>
+    <a href="{{ url_for('main.feed', kind='all') }}" class="chip {% if filter_kind|default('all') == 'all' %}is-active{% endif %}">Все</a>
+    <a href="{{ url_for('main.feed', kind='post') }}" class="chip {% if filter_kind == 'post' %}is-active{% endif %}">Посты</a>
+    <a href="{{ url_for('main.feed', kind='question') }}" class="chip {% if filter_kind == 'question' %}is-active{% endif %}">Вопросы</a>
+    <a href="{{ url_for('main.feed', kind='poll') }}" class="chip {% if filter_kind == 'poll' %}is-active{% endif %}">Опросы</a>
+    <a href="{{ url_for('main.feed', kind='ship') }}" class="chip {% if filter_kind == 'ship' %}is-active{% endif %}">Запуски</a>
+    <a href="{{ url_for('main.feed', kind='sale') }}" class="chip {% if filter_kind == 'sale' %}is-active{% endif %}">Продажи</a>
+    <a href="{{ url_for('main.feed', kind='roast') }}" class="chip {% if filter_kind == 'roast' %}is-active{% endif %}">Разбор AI</a>
+  </div>
+  <div class="feed-list" id="feed-list">
+    {% for feed_item in feed_items %}
+      {% include "partials/activity_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+(function () {
+  var wrap = document.querySelector("[data-feed-compose]");
+  if (!wrap) return;
+
+  function setOpen(open) {
+    wrap.classList.toggle("is-open", open);
+    var trigger = wrap.querySelector("[data-feed-compose-open]");
+    if (trigger) trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      window.setTimeout(function () {
+        wrap.querySelector(".feed-compose__body")?.focus();
+      }, 50);
+    }
+  }
+
+  window.closeFeedCompose = function () {
+    setOpen(false);
+  };
+
+  wrap.addEventListener("click", function (event) {
+    if (event.target.closest("[data-feed-compose-open]")) {
+      event.preventDefault();
+      setOpen(true);
+      return;
+    }
+    if (event.target.closest("[data-feed-compose-close]")) {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    }
+  });
+
+  if (new URLSearchParams(window.location.search).get("compose") === "1") {
+    setOpen(true);
+  }
+})();
+</script>
+{% endblock %}

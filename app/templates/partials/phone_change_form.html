@@ -1,0 +1,30 @@
+<div class="phone-change-block name-verify-block stack">
+  {% if success %}
+  <p class="hint success">{{ success }}</p>
+  {% else %}
+  <p class="hint">Текущий: {{ user.phone }}</p>
+  {% if code_sent %}
+  <form class="stack" method="post" action="{{ url_for('auth.phone_change_confirm') }}" hx-post="{{ url_for('auth.phone_change_confirm') }}" hx-target="#phone-change-wrap" hx-swap="innerHTML">
+    {{ form.csrf_token }}
+    {{ form.new_phone(type="hidden", value=new_phone) }}
+    <label class="field">
+      <span>{{ form.code.label.text }}</span>
+      {{ form.code(class_="input", placeholder="1234", inputmode="numeric") }}
+    </label>
+    {% if demo_hint %}<p class="hint">Demo: код <strong>{{ demo_hint }}</strong></p>{% endif %}
+    {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+    <button class="btn btn-primary" type="submit">Подтвердить</button>
+  </form>
+  {% else %}
+  <form class="stack" method="post" action="{{ url_for('auth.phone_change_request') }}" hx-post="{{ url_for('auth.phone_change_request') }}" hx-target="#phone-change-wrap" hx-swap="innerHTML">
+    {{ form.csrf_token }}
+    <label class="field">
+      <span>{{ form.new_phone.label.text }}</span>
+      {{ form.new_phone(class_="input", placeholder="77010000001", inputmode="numeric") }}
+    </label>
+    {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+    <button class="btn btn-ghost" type="submit">Сменить телефон</button>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>

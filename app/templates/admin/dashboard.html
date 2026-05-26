@@ -1,0 +1,228 @@
+{% extends "admin/base_admin.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% from "components/_admin_stat.html" import admin_stat %}
+{% block title %}Админ-панель · Kangaroo{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title admin-page__head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Панель управления</h1>
+    </div>
+  </header>
+
+  <div class="admin-stats">
+    {{ admin_stat(stats.users, 'Пользователи', 'users') }}
+    {{ admin_stat(stats.startups, 'Проекты', 'startups') }}
+    {{ admin_stat(stats.likes, 'Лайки', 'likes') }}
+    {{ admin_stat(stats.comments, 'Комментарии', 'comments') }}
+    {{ admin_stat(stats.threads, 'AI-чаты', 'threads') }}
+    {{ admin_stat(stats.activities, 'События', 'activities') }}
+    {{ admin_stat(stats.push_subscriptions, 'Push-подписки', 'push') }}
+    {{ admin_stat(stats.unread_notifications, 'Непрочит. уведомления', 'notifications') }}
+  </div>
+
+  {% if pending_validations %}
+  <article class="admin-panel">
+    <h2>Ожидают личной проверки (AI ✓)</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead><tr><th>Фаундер</th><th>Проект</th><th>Шаг</th><th>ТОО</th><th>AI</th><th></th></tr></thead>
+        <tbody>
+          {% for item in pending_validations %}
+          <tr>
+            <td>{{ item.user.name }}</td>
+            <td>{{ item.startup.name }}</td>
+            <td>{{ item.step_label }}</td>
+            <td>{% set t = startup_rows[item.startup.id].too if item.startup.id in startup_rows else {'state': 'unknown', 'label': '—'} %}{{ too_badge(t) }}</td>
+            <td>{{ item.ai_confidence or 0 }}%</td>
+            <td><a href="{{ url_for('admin.validation_detail', request_id=item.id) }}">Проверить</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  {% if stuck_founders %}
+  <article class="admin-panel">
+    <h2>Outreach — застряли на шаге</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>Основатель</th><th>Проект</th><th>ТОО</th><th>Шаг</th><th>Дней</th><th>Путь</th></tr>
+        </thead>
+        <tbody>
+          {% for row in stuck_founders %}
+          <tr class="{% if row.stuck_level == 'critical' %}admin-row--danger{% elif row.stuck_level == 'warn' %}admin-row--warn{% endif %}">
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=row.user.id) }}">{{ row.user.name }}</a></td>
+            <td class="admin-table__clip">{{ row.startup.name }}</td>
+            <td>{{ too_badge(row.too) }}</td>
+            <td>{{ row.step_index + 1 if row.step_index is not none else '—' }} / {{ row.progress.total }} · {{ row.step_label[:24] }}</td>
+            <td>
+              {% if row.days_on_step is not none %}
+              {{ row.days_on_step }} дн.
+              {% if row.stuck_level == 'critical' %}<span class="admin-badge admin-badge--danger">7+</span>{% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td>{{ row.progress_pct }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  {% if onboarding_funnel %}
+  <article class="admin-panel">
+    <h2>Онбординг не завершён</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>Основатель</th><th>Checklist</th><th>Не сделано</th></tr>
+        </thead>
+        <tbody>
+          {% for row in onboarding_funnel %}
+          <tr>
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=row.user.id) }}">{{ row.user.name }}</a></td>
+            <td>{{ row.done_count }}/{{ row.total }}</td>
+            <td class="admin-table__clip">{% if row.has_ai_project %}{{ row.missing|join(' · ') }}{% else %}Пока нет проекта{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  <article class="admin-panel">
+    <h2>Пользователи</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--users admin-table--retention">
+        <thead>
+          <tr><th>ID</th><th>Имя</th><th>Телефон</th><th>Прогресс</th><th>Застой</th><th>Команда</th><th>XP</th><th>Роль</th></tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          {% set stuck = admin_user_stuck_summary(user) %}
+          <tr class="{% if stuck.level == 'critical' %}admin-row--danger{% elif stuck.level == 'warn' %}admin-row--warn{% endif %}">
+            <td>{{ user.id }}</td>
+            <td class="admin-table__clip">
+              <a class="admin-link" href="{{ url_for('admin.user_detail', user_id=user.id) }}">{{ user.name }}</a>
+            </td>
+            <td class="admin-table__clip">{{ user.phone }}</td>
+            <td class="admin-table__clip">{{ admin_user_progress_summary(user) }}</td>
+            <td>
+              {{ stuck.label }}
+              {% if stuck.badge %}<span class="admin-badge admin-badge--danger">{{ stuck.badge }}</span>{% endif %}
+            </td>
+            <td>{{ admin_user_team_summary(user) }}</td>
+            <td>{% if user.account_type == 'investor' %}—{% else %}{{ user.score }}{% endif %}</td>
+            <td id="user-role-{{ user.id }}">
+              {% include "admin/_user_role_cell.html" %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  {% if teams %}
+  <article class="admin-panel">
+    <h2>Команды</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>Проект</th><th>Основатель</th><th>ТОО</th><th>Участники</th><th>Шаг</th><th>Ожидают</th></tr>
+        </thead>
+        <tbody>
+          {% for row in teams %}
+          <tr>
+            <td>{{ row.startup.name }}</td>
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=row.startup.owner_id) }}">{{ row.startup.owner.name }}</a></td>
+            <td>{{ too_badge(row.too) }}</td>
+            <td class="admin-table__clip">{% for m in row.members %}{{ m.name }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+            <td>{{ row.progress.done }}/{{ row.progress.total }} · {{ row.current_label[:24] }}</td>
+            <td>{% if row.pending_invites %}{{ row.pending_invites|length }}{% else %}—{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  {% if invitations %}
+  <article class="admin-panel">
+    <h2>Приглашения</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>От</th><th>Кому</th><th>Проект</th><th>Статус</th></tr>
+        </thead>
+        <tbody>
+          {% for invite in invitations %}
+          <tr>
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=invite.inviter_id) }}">{{ invite.inviter.name }}</a></td>
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=invite.invitee_id) }}">{{ invite.invitee.name }}</a></td>
+            <td>{{ invite.startup.name }}</td>
+            <td><span class="admin-status admin-status--{{ invite.status }}">{{ invite.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% endif %}
+
+  <article class="admin-panel">
+    <h2>Проекты</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide admin-table--projects">
+        <thead>
+          <tr><th>ID</th><th>Название</th><th>ТОО</th><th>Шаг карты</th><th>Дней на шаге</th><th>Задачи нед.</th><th>Команда</th><th>Владелец</th></tr>
+        </thead>
+        <tbody>
+          {% for startup in startups %}
+          {% set row = startup_rows[startup.id] %}
+          <tr class="{% if row.stuck_level == 'critical' %}admin-row--danger{% elif row.stuck_level == 'warn' %}admin-row--warn{% endif %}">
+            <td>{{ startup.id }}</td>
+            <td>{{ startup.name }}</td>
+            <td>{{ too_badge(row.too) }}</td>
+            <td class="admin-table__clip">{{ row.progress.done }}/{{ row.progress.total }} · {{ row.current_label[:30] }}</td>
+            <td>{% if row.days_on_step is not none %}{{ row.days_on_step }} дн.{% else %}—{% endif %}</td>
+            <td>{% if row.weekly_goals_total is not none %}{{ row.weekly_goals_done }}/{{ row.weekly_goals_total }}{% else %}—{% endif %}</td>
+            <td>{{ row.member_count if row.member_count > 1 else '—' }}</td>
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=startup.owner_id) }}">#{{ startup.owner_id }}</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="admin-panel">
+    <h2>Последние AI-чаты</h2>
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table--wide">
+        <thead>
+          <tr><th>ID</th><th>Название</th><th>Фаза</th><th>Пользователь</th></tr>
+        </thead>
+        <tbody>
+          {% for thread in threads %}
+          <tr>
+            <td><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">#{{ thread.id }}</a></td>
+            <td class="admin-table__clip"><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">{{ thread.title }}</a></td>
+            <td>{{ thread.phase }}</td>
+            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=thread.user_id) }}">#{{ thread.user_id }}</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

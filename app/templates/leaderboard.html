@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "components/_avatar.html" import user_avatar %}
+{% block title %}Лидерборд · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <p class="eyebrow">Рейтинг основателей</p>
+    <h1>Лидерборд</h1>
+  </header>
+  <div class="filter-row">
+    <a href="{{ url_for('main.leaderboard') }}" class="chip {% if not filter_region %}is-active{% endif %}">Все</a>
+    <a href="{{ url_for('main.leaderboard', region='almaty') }}" class="chip {% if filter_region == 'almaty' %}is-active{% endif %}">Алматы</a>
+    <a href="{{ url_for('main.leaderboard', region='astana') }}" class="chip {% if filter_region == 'astana' %}is-active{% endif %}">Астана</a>
+    <a href="{{ url_for('main.leaderboard', region='shymkent') }}" class="chip {% if filter_region == 'shymkent' %}is-active{% endif %}">Шымкент</a>
+  </div>
+  <div class="podium">
+    {% for leader in top_leaders %}
+    <a class="podium-card rank-{{ loop.index }} card-link" href="{{ url_for('main.user_profile', user_id=leader.id) }}">
+      <span>#{{ loop.index }}</span>
+      {{ user_avatar(leader) }}
+      <strong>{{ leader.name }}</strong>
+      <small>{{ leader.score }} XP</small>
+    </a>
+    {% endfor %}
+  </div>
+  {% if rest_leaders %}
+  <div class="leader-list">
+    {% for leader in rest_leaders %}
+    <a class="leader-row card-link" href="{{ url_for('main.user_profile', user_id=leader.id) }}">
+      <span class="leader-row__rank">{{ loop.index + top_leaders|length }}</span>
+      {{ user_avatar(leader, 'mini') }}
+      <div class="leader-row__body">
+        <strong>{{ leader.name }}</strong>
+        <small>{{ leader.role|user_role }}</small>
+      </div>
+      <div class="leader-row__score">
+        <strong>{{ leader.score }}</strong>
+        <small>XP</small>
+      </div>
+      <span class="leader-row__arrow" aria-hidden="true">→</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

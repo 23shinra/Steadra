@@ -1,0 +1,15 @@
+{% if progress_startup %}
+<div class="chat-map-toggle{% if ask_map_confirm or suggest_via_map %} is-suggested{% endif %}{% if ask_map_confirm %} is-confirm{% endif %}" id="chat-map-toggle" hx-swap-oob="true">
+  <label class="chat-map-toggle__label">
+    <input type="checkbox" id="chat-via-map" name="via_map" value="1" {% if not ask_map_confirm %}checked{% endif %} />
+    <span>По карте прогресса</span>
+  </label>
+  {% if ask_map_confirm and map_confirm_hint %}
+  <p class="chat-map-toggle__suggest">{{ map_confirm_hint }}</p>
+  {% elif suggest_via_map and map_hint %}
+  <p class="chat-map-toggle__suggest">{{ map_hint }}</p>
+  {% else %}
+  <span class="chat-map-toggle__hint">Включено — ответы по шагам ветки</span>
+  {% endif %}
+</div>
+{% endif %}

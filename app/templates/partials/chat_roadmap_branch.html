@@ -1,0 +1,13 @@
+{% if roadmap_branch %}
+<nav class="roadmap-branch" aria-label="Путь к деньгам">
+  <p class="roadmap-branch__title">Путь к деньгам</p>
+  <ol class="roadmap-branch__steps">
+    {% for step in roadmap_branch %}
+    <li class="roadmap-branch__step is-{{ step.status }}">
+      <span class="roadmap-branch__dot"></span>
+      <span class="roadmap-branch__label">{{ step.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</nav>
+{% endif %}

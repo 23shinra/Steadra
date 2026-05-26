@@ -1,0 +1,13 @@
+<form class="stack" method="post" action="{{ url_for('auth.submit_login') }}" hx-post="{{ url_for('auth.submit_login') }}" hx-target="#auth-step" hx-swap="innerHTML">
+  {{ form.csrf_token }}
+  <label class="field">
+    <span>{{ form.phone.label.text }}</span>
+    {{ form.phone(class_="input", placeholder="77010000001", inputmode="numeric", autocomplete="tel", maxlength="11", pattern="7[0-9]{10}", data_phone_mask="kz") }}
+  </label>
+  {% if form.phone.errors %}
+    <p class="form-error">{{ form.phone.errors[0] }}</p>
+  {% endif %}
+  {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+  <button class="btn btn-primary" type="submit">Получить код</button>
+  <p class="hint">Казахстанский номер: 11 цифр, например 77010000001</p>
+</form>

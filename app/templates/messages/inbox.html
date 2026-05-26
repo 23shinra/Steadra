@@ -1,0 +1,11 @@
+<section class="screen stack-lg">
+  <header class="page-title"><h1>Сообщения</h1></header>
+  {% for t in threads %}
+  <a href="{{ url_for('extensions.messages_thread', other_id=t.other.id) }}" class="card">
+    <strong>{{ t.other.name }}</strong>
+    <p class="muted">{{ t.last.body[:80] }}{% if t.unread %} · {{ t.unread }} новых{% endif %}</p>
+  </a>
+  {% else %}
+  <p class="muted">Пока нет переписок.</p>
+  {% endfor %}
+</section>

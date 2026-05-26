@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="admin-shell" id="admin-shell">
+  <div class="admin-sidebar-rail">
+    {% include "admin/_sidebar.html" %}
+  </div>
+  <div class="admin-shell__main">
+    <header class="admin-topbar">
+      <button type="button" class="admin-topbar__menu" id="admin-sidebar-open" aria-label="Развернуть меню" aria-controls="admin-sidebar" aria-expanded="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <span class="admin-topbar__title">Admin</span>
+    </header>
+    {% block admin_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
+{% block page_scripts %}
+<script>
+(function () {
+  const shell = document.getElementById("admin-shell");
+  if (!shell) return;
+
+  const storageKey = "adminSidebarCollapsed";
+
+  const syncSidebar = () => {
+    const collapsed = shell.classList.contains("is-collapsed");
+    shell.querySelectorAll("#admin-sidebar-collapse, #admin-sidebar-open").forEach((btn) => {
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      const label = collapsed ? "Развернуть меню" : "Свернуть меню";
+      btn.setAttribute("aria-label", label);
+      if (btn.hasAttribute("title")) btn.setAttribute("title", label);
+    });
+  };
+
+  const toggleSidebar = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    shell.classList.toggle("is-collapsed");
+    localStorage.setItem(storageKey, shell.classList.contains("is-collapsed") ? "1" : "0");
+    syncSidebar();
+  };
+
+  if (localStorage.getItem(storageKey) === "1") {
+    shell.classList.add("is-collapsed");
+  }
+  syncSidebar();
+
+  shell.addEventListener("click", (event) => {
+    if (event.target.closest("#admin-sidebar-collapse, #admin-sidebar-open")) {
+      toggleSidebar(event);
+    }
+  });
+})();
+</script>
+{% endblock %}

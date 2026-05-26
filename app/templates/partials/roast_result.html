@@ -1,0 +1,13 @@
+{% if error %}
+  <article class="empty-card error"><strong>Нужно больше мяса.</strong><p>{{ error }}</p></article>
+{% else %}
+  <article class="roast-result">
+    <div class="scoreline"><span>Idea survival score</span><strong>{{ roast.score }}%</strong></div>
+    <h2>{{ roast.verdict }}</h2>
+    <div class="result-grid">
+      <section><h3>Риски</h3>{% for item in roast.risks %}<p>• {{ item }}</p>{% endfor %}</section>
+      <section><h3>Следующие ходы</h3>{% for item in roast.moves %}<p>• {{ item }}</p>{% endfor %}</section>
+    </div>
+    <div class="mvp-box"><span>MVP</span><p>{{ roast.mvp }}</p></div>
+  </article>
+{% endif %}

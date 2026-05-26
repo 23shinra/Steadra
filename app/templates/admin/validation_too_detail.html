@@ -1,0 +1,62 @@
+{% extends "admin/base_admin.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% block title %}ТОО · {{ req.company_name }} · Admin{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('admin.validation_too_page') }}">← Валидация ТОО</a>
+    <h1>{{ req.company_name }}</h1>
+    <p class="muted">{{ startup.name }} · {{ user.name }} · BIN {{ req.bin }} · {{ too_badge(too) }}</p>
+  </header>
+
+  <article class="card stack">
+    <h2>Заявка фаундера</h2>
+    <p>{{ req.message }}</p>
+    <div class="admin-validation-card__attachments">
+      {% if req.evidence_filepath %}
+      <a class="btn btn-primary btn-sm" href="{{ url_for('admin.validation_too_evidence', request_id=req.id) }}">Скачать {{ req.evidence_filename }}</a>
+      {% endif %}
+      {% if req.evidence_url %}
+      <a class="btn btn-ghost btn-sm" href="{{ req.evidence_url }}" target="_blank" rel="noopener">Открыть выписку</a>
+      {% endif %}
+    </div>
+    <p class="muted">Текущий шаг roadmap: {{ current_step.label if current_step else '—' }}</p>
+  </article>
+
+  {% if chat_messages %}
+  <article class="card admin-validation-chat admin-validation-chat--full">
+    <h2>Переписка в чате</h2>
+    <div class="admin-validation-chat__scroll">
+      {% for msg in chat_messages %}
+      <div class="admin-validation-chat__msg is-{{ msg.role }}">
+        <span class="admin-validation-chat__role">{% if msg.role == 'user' %}{{ user.name }}{% else %}AI{% endif %}</span>
+        <p>{{ msg.content }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+  {% elif req.chat_excerpt %}
+  <article class="card">
+    <h2>Фрагмент чата</h2>
+    <pre class="admin-too-excerpt">{{ req.chat_excerpt }}</pre>
+  </article>
+  {% endif %}
+
+  <div class="admin-validation-decision">
+    <form class="card stack" method="post" action="{{ url_for('admin.validation_too_approve', request_id=req.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <h2>Подтвердить ТОО</h2>
+      <p class="muted">ТОО реально зарегистрировано — статус обновится, шаг «Открытие ТОО» закроется если активен.</p>
+      <label class="field"><span>Заметка</span><textarea name="admin_notes" class="input" rows="2"></textarea></label>
+      <button type="submit" class="btn btn-primary full">Подтвердить</button>
+    </form>
+    <form class="card stack" method="post" action="{{ url_for('admin.validation_too_reject', request_id=req.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <h2>Отклонить</h2>
+      <p class="muted">Документы не подходят или BIN неверный.</p>
+      <label class="field"><span>Причина</span><textarea name="admin_notes" class="input" rows="2" required></textarea></label>
+      <button type="submit" class="btn btn-ghost full">Отклонить</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

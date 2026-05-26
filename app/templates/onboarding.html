@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-screen">
+  <div class="top-mark">
+    <div class="logo-orb">K</div>
+    <span>Kangaroo</span>
+  </div>
+
+  <div class="hero-middle">
+    <div class="cube-stage" aria-hidden="true">
+      <div class="cube cube-main"></div>
+      <div class="cube cube-small cube-a"></div>
+      <div class="cube cube-small cube-b"></div>
+      <div class="wire wire-a"></div>
+      <div class="wire wire-b"></div>
+    </div>
+    <div class="hero-copy">
+      <p class="eyebrow">AI startup arena</p>
+      <h1>Выше. Жёстче. Быстрее.</h1>
+      <p>Фаундеры, команды и AI-агент для разбора стартап-идей.</p>
+    </div>
+  </div>
+
+  <div class="hero-actions">
+    <a class="btn btn-primary full" href="{{ url_for('auth.login') }}">Начать</a>
+  </div>
+</section>
+{% endblock %}

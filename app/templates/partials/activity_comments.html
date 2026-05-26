@@ -1,0 +1,11 @@
+{% set comments = feed_item.comments %}
+<ul class="activity-comments__list">
+  {% for comment in comments %}
+  <li class="activity-comments__item">
+    <strong>{{ comment.user.name }}</strong>
+    <span>{{ comment.body }}</span>
+  </li>
+  {% else %}
+  <li class="activity-comments__empty">Пока нет комментариев — будь первым.</li>
+  {% endfor %}
+</ul>

@@ -1,0 +1,12 @@
+<div class="chat-msg chat-msg-user">
+  <div class="chat-msg__bubble">{{ message }}</div>
+</div>
+<div class="chat-msg chat-msg-ai">
+  <div class="chat-msg__bubble">
+    {% for paragraph in reply.split('\n\n') %}
+      {% if paragraph.strip() %}
+        <p>{{ paragraph.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

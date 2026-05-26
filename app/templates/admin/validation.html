@@ -1,0 +1,83 @@
+{% extends "admin/base_admin.html" %}
+{% from "components/_too_badge.html" import too_badge %}
+{% block title %}Валидация · Admin{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title admin-page__head">
+    <div>
+      <p class="eyebrow">Admin</p>
+      <h1>Валидация</h1>
+      <p class="muted">Отчёты фаундеров, вложения и переписка из AI-чата — подтвердите, что шаг реально закрыт.</p>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <p class="flash flash-{{ category }}">{{ message }}</p>
+    {% endfor %}
+  {% endwith %}
+
+  {% if bundles %}
+  <div class="admin-validation-list">
+    {% for bundle in bundles %}
+    {% set req = bundle.request %}
+    <article class="admin-validation-card card" id="validation-{{ req.id }}">
+      <header class="admin-validation-card__head">
+        <div>
+          <strong>{{ req.user.name }}</strong>
+          <span class="muted">· {{ req.startup.name }}</span>
+          {{ too_badge(bundle.too) }}
+        </div>
+        <span class="admin-tag">{{ req.step_label }}</span>
+      </header>
+
+      <div class="admin-validation-card__report">
+        <p class="admin-validation-card__label">Отчёт</p>
+        <p>{{ req.report }}</p>
+      </div>
+
+      <div class="admin-validation-card__attachments">
+        {% if req.evidence_filepath %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.validation_evidence', request_id=req.id) }}">📎 {{ req.evidence_filename or 'Вложение' }}</a>
+        {% endif %}
+        {% if req.evidence_url %}
+        <a class="btn btn-ghost btn-sm" href="{{ req.evidence_url }}" target="_blank" rel="noopener">🔗 Ссылка</a>
+        {% endif %}
+        {% if not req.evidence_filepath and not req.evidence_url %}
+        <span class="muted">Без вложений</span>
+        {% endif %}
+      </div>
+
+      {% if bundle.chat_messages %}
+      <div class="admin-validation-chat">
+        <p class="admin-validation-card__label">Сообщения из чата</p>
+        <div class="admin-validation-chat__scroll">
+          {% for msg in bundle.chat_messages[-6:] %}
+          <div class="admin-validation-chat__msg is-{{ msg.role }}">
+            <span class="admin-validation-chat__role">{% if msg.role == 'user' %}Фаундер{% else %}AI{% endif %}</span>
+            <p>{{ msg.content[:400] }}{% if msg.content|length > 400 %}…{% endif %}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="admin-validation-card__ai">
+        <span>AI: {{ req.ai_confidence or 0 }}%</span>
+        <span class="muted">{{ req.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+      </div>
+
+      <div class="admin-validation-card__actions">
+        <a class="btn btn-primary" href="{{ url_for('admin.validation_detail', request_id=req.id) }}">Открыть и решить</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <article class="card admin-empty">
+    <strong>Очередь пуста</strong>
+    <p class="muted">Когда AI одобрит отчёт фаундера, заявка появится здесь с отчётом, вложениями и чатом.</p>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}

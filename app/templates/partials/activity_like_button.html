@@ -1,0 +1,16 @@
+{% set activity = feed_item.activity %}
+<div class="activity-card__actions" id="activity-actions-{{ activity.id }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <button
+    type="button"
+    class="activity-like{% if liked %} is-liked{% endif %}"
+    hx-post="{{ url_for('main.feed_like', activity_id=activity.id) }}"
+    hx-target="#activity-actions-{{ activity.id }}"
+    hx-swap="outerHTML"
+    hx-include="#activity-actions-{{ activity.id }}"
+    aria-pressed="{{ 'true' if liked else 'false' }}"
+  >
+    <span class="activity-like__icon" aria-hidden="true">♥</span>
+    <span class="activity-like__count">{{ likes_count }}</span>
+  </button>
+</div>

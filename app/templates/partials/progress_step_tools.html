@@ -1,0 +1,75 @@
+{% if step_key == 'idea_poll' %}
+<article class="card progress-step-tools">
+  <h3>Опросник в ленте</h3>
+  <p class="muted">Опубликуй гипотезу — сообщество проголосует и покажет: норм тема или нет.</p>
+  {% if startup_poll %}
+  <div class="poll-verdict poll-verdict--{{ startup_poll.verdict }}">
+    <strong>
+      {% if startup_poll.verdict == 'good' %}Норм тема{% elif startup_poll.verdict == 'weak' %}Слабая тема{% elif startup_poll.verdict == 'unclear' %}Нужно больше откликов{% else %}Собираем голоса…{% endif %}
+    </strong>
+    <span>Score {{ startup_poll.score }} · 👍 {{ startup_poll.yes_count }} · 👎 {{ startup_poll.no_count }} · 🤔 {{ startup_poll.maybe_count }}</span>
+    <a href="{{ url_for('main.feed', kind='poll') }}">Открыть в ленте →</a>
+  </div>
+  {% else %}
+  <form class="stack" method="post" action="{{ url_for('extensions.create_poll', startup_id=progress_startup.id) }}"
+    hx-post="{{ url_for('extensions.create_poll', startup_id=progress_startup.id) }}"
+    hx-target="#poll-create-result" hx-swap="innerHTML">
+    {{ poll_form.csrf_token }}
+    <label class="field">
+      <span>Гипотеза (вопрос к сообществу)</span>
+      {{ poll_form.hypothesis(class_="input", rows="2", placeholder="Например: фаундерам в KZ нужен AI-ментор по шагам roadmap?") }}
+    </label>
+    <label class="field">
+      <span>Заголовок поста</span>
+      {{ poll_form.title(class_="input", placeholder="Необязательно") }}
+    </label>
+    <button type="submit" class="btn btn-primary full">Опубликовать опрос в ленте</button>
+  </form>
+  <div id="poll-create-result"></div>
+  {% endif %}
+</article>
+{% elif step_key == 'pitch_pre' %}
+<article class="card progress-step-tools">
+  <h3>Преза без MVP</h3>
+  <p class="muted">Problem/solution deck до продукта — без fake traction.</p>
+  <a class="btn btn-primary full" href="{{ url_for('extensions.pitch_pre', startup_id=progress_startup.id) }}">Сгенерировать pre-MVP deck</a>
+  {% if progress_startup.pitch_pre_json %}
+  <p class="hint">Deck сохранён — укажи это в отчёте при отправке на проверку.</p>
+  {% endif %}
+</article>
+{% elif step_key == 'pitch' %}
+<article class="card progress-step-tools">
+  <h3>Питч на проверку</h3>
+  <p class="muted">Вставь текст питча — AI разберёт слайды и даст score.</p>
+  {% if pitch_analysis %}
+  <div class="pitch-score pitch-score--{% if pitch_analysis.score >= 60 %}good{% elif pitch_analysis.score >= 40 %}mid{% else %}weak{% endif %}">
+    <strong>Score {{ pitch_analysis.score }}/100</strong> · {{ pitch_analysis.verdict }}
+    <p class="muted">{{ pitch_analysis.summary }}</p>
+  </div>
+  {% endif %}
+  <a class="btn btn-primary full" href="{{ url_for('extensions.pitch_analyze', startup_id=progress_startup.id) }}">Анализ питча AI</a>
+  <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_validated', startup_id=progress_startup.id) }}">Validated deck (с метриками)</a>
+</article>
+{% elif step_key == 'finmodel' %}
+<article class="card progress-step-tools">
+  <h3>Финмодель B2B / B2C</h3>
+  <p class="muted">Выбери модель и заполни ключевые метрики — AI проверит логику.</p>
+  {% if fin_model and fin_model.analysis %}
+  <div class="finmodel-summary">
+    <strong>{{ fin_model.analysis.model_type|upper }} · score {{ fin_model.analysis.score }}</strong>
+    <p class="muted">{{ fin_model.analysis.summary }}</p>
+  </div>
+  {% endif %}
+  <a class="btn btn-primary full" href="{{ url_for('extensions.finmodel_page', startup_id=progress_startup.id) }}">Заполнить финмодель</a>
+</article>
+{% elif step_key == 'too' %}
+<article class="card progress-step-tools">
+  <h3>Подтверждение ТОО</h3>
+  <p class="muted">Уже зарегистрировали ТОО? Отправь BIN и выписку — админ проверит.</p>
+  {% if too_pending %}
+  <p class="flash flash-info">Заявка на проверку ТОО отправлена. Ждём решения админа.</p>
+  {% elif show_too_submit %}
+  <p class="hint">Заявку на проверку ТОО отправь в <a href="{{ url_for('main.ai', thread=thread.id) if thread else url_for('main.ai') }}">AI-чате</a> проекта.</p>
+  {% endif %}
+</article>
+{% endif %}

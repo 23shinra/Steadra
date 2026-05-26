@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Анализ питча · {{ startup.name }}{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.progress_page', startup=startup.id) }}">← Карта</a>
+    <h1>Анализ питча · {{ startup.name }}</h1>
+    <p class="muted">Вставь текст слайдов — AI оценит готовность к инвестору.</p>
+  </header>
+
+  <form class="card stack" method="post">
+    {{ form.csrf_token }}
+    <label class="field">
+      <span>Текст питча</span>
+      {{ form.pitch_text(class_="input", rows="12", placeholder="Slide 1 Problem: ...\nSlide 2 Solution: ...") }}
+    </label>
+    <button type="submit" class="btn btn-primary">Разобрать AI</button>
+  </form>
+
+  {% if analysis %}
+  <article class="card pitch-analysis">
+    <div class="pitch-score pitch-score--{% if analysis.score >= 60 %}good{% elif analysis.score >= 40 %}mid{% else %}weak{% endif %}">
+      <h2>Score {{ analysis.score }}/100</h2>
+      <p>{{ analysis.verdict }} · {% if analysis.investor_ready %}готов с доработками{% else %}нужна доработка{% endif %}</p>
+    </div>
+    <p>{{ analysis.summary }}</p>
+    {% if analysis.strengths %}
+    <h3>Сильные стороны</h3>
+    <ul>{% for s in analysis.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if analysis.weaknesses %}
+    <h3>Слабые места</h3>
+    <ul>{% for s in analysis.weaknesses %}<li>{{ s }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if analysis.slides_feedback %}
+    <h3>По слайдам</h3>
+    {% for sf in analysis.slides_feedback %}
+    <article class="pitch-slide-feedback">
+      <strong>{{ sf.slide }}</strong>
+      <p class="muted">{{ sf.issue }}</p>
+      <p>→ {{ sf.fix }}</p>
+    </article>
+    {% endfor %}
+    {% endif %}
+  </article>
+  {% endif %}
+  <p class="hint">AI-запросов осталось: {{ ai_remaining }}</p>
+</section>
+{% endblock %}

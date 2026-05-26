@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "components/_avatar.html" import user_avatar %}
+{% block title %}{{ startup.name }} · Kangaroo{% endblock %}
+{% block content %}
+<section class="screen stack-lg">
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.profile') if is_owner else url_for('main.home') }}">← Назад</a>
+    <p class="eyebrow">{{ startup.stage }}</p>
+    <h1>{{ startup.name }}</h1>
+    <p class="muted">{{ startup.tagline }}</p>
+  </header>
+
+  <article class="startup-hero">
+    <div class="startup-metrics">
+      <div class="metric-block">
+        <strong>{{ startup.health }}%</strong>
+        <span>Health</span>
+      </div>
+      <div class="metric-block">
+        <strong>{{ startup.traction }}</strong>
+        <span>Traction</span>
+      </div>
+      <div class="metric-block">
+        <strong>{{ activities|length }}</strong>
+        <span>Updates</span>
+      </div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width: {{ startup.health }}%"></div>
+    </div>
+    <p class="hint">Прогресс проекта по внутренней метрике Kangaroo</p>
+  </article>
+
+  <article class="owner-strip">
+    {{ user_avatar(owner, 'mini') }}
+    <div>
+      <strong>{{ owner.name }}</strong>
+      <small>{{ owner.role|user_role }}</small>
+    </div>
+    {% if is_owner %}
+    <span class="chip is-active">Твой проект</span>
+    {% elif is_member %}
+    <span class="chip is-active">Вы в команде</span>
+    {% endif %}
+  </article>
+
+  {% if team_profile %}
+  <article class="card team-invite-current">
+    <p class="eyebrow">Прогресс команды</p>
+    {% if team_profile.finished %}
+    <h2>Ветка пройдена</h2>
+    {% elif team_profile.current_step %}
+    <h2>{{ team_profile.current_step.label }}</h2>
+    <p class="muted">{{ team_profile.current_step.hint }}</p>
+    {% if team_profile.days_on_step is not none %}
+    <p class="team-invite-current__days">{{ team_profile.days_on_step }} дн. на шаге</p>
+    {% endif %}
+    {% endif %}
+    <p class="muted">{{ team_profile.progress.done }}/{{ team_profile.progress.total }} · {{ team_profile.progress.percent }}%</p>
+  </article>
+  {% if team_profile.map_nodes %}
+  <article class="card investor-map-card">
+    <h2>Карта прогресса</h2>
+    {% with map_nodes=team_profile.map_nodes, progress=team_profile.progress %}
+    {% include "partials/roadmap_map.html" %}
+    {% endwith %}
+  </article>
+  {% endif %}
+  {% endif %}
+
+  {% if is_owner %}
+  <a class="btn btn-primary full" href="{{ url_for('main.ai') }}">Прожарить идею в AI</a>
+  <form method="post" action="{{ url_for('extensions.upload_document', startup_id=startup.id) }}" enctype="multipart/form-data" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <label class="field"><span>Data room: загрузить файл</span><input type="file" name="document" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>
+    <select name="kind" class="input"><option value="pitch">Pitch deck</option><option value="financials">Финмодель</option><option value="cap">Cap table</option></select>
+    <button type="submit" class="btn btn-ghost">Загрузить</button>
+  </form>
+  {% if startup.documents %}
+  <ul>{% for d in startup.documents %}<li>{{ d.kind }}: {{ d.filename }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% endif %}
+
+  <div class="section-head">
+    <h2>Апдейты проекта</h2>
+  </div>
+  {% if activities %}
+  <div class="feed-list">
+    {% for feed_item in feed_items %}
+      {% include "partials/activity_card.html" %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <article class="empty-card">
+    <strong>Пока тихо</strong>
+    <p>Здесь появятся шаги команды: запуски, продажи, AI Roast и найм.</p>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}
