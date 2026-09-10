@@ -19,11 +19,16 @@ def ensure_user_schema() -> None:
         ("onboarding_done", "ALTER TABLE user ADD COLUMN onboarding_done BOOLEAN DEFAULT 0"),
         ("account_type", "ALTER TABLE user ADD COLUMN account_type VARCHAR(20) DEFAULT 'user'"),
         ("locale", "ALTER TABLE user ADD COLUMN locale VARCHAR(5) DEFAULT 'ru'"),
+        ("theme", "ALTER TABLE user ADD COLUMN theme VARCHAR(10) DEFAULT 'dark'"),
         ("region", "ALTER TABLE user ADD COLUMN region VARCHAR(80)"),
         ("ai_requests_count", "ALTER TABLE user ADD COLUMN ai_requests_count INTEGER DEFAULT 0"),
         ("ai_requests_reset_at", "ALTER TABLE user ADD COLUMN ai_requests_reset_at DATETIME"),
         ("is_verified_investor", "ALTER TABLE user ADD COLUMN is_verified_investor BOOLEAN DEFAULT 0"),
         ("open_for_messages", "ALTER TABLE user ADD COLUMN open_for_messages BOOLEAN DEFAULT 1"),
+        ("show_in_leaderboard", "ALTER TABLE user ADD COLUMN show_in_leaderboard BOOLEAN DEFAULT 1"),
+        ("show_in_search", "ALTER TABLE user ADD COLUMN show_in_search BOOLEAN DEFAULT 1"),
+        ("show_projects_public", "ALTER TABLE user ADD COLUMN show_projects_public BOOLEAN DEFAULT 1"),
+        ("show_achievements_public", "ALTER TABLE user ADD COLUMN show_achievements_public BOOLEAN DEFAULT 1"),
         ("active_startup_id", "ALTER TABLE user ADD COLUMN active_startup_id INTEGER"),
         ("investor_linkedin", "ALTER TABLE user ADD COLUMN investor_linkedin VARCHAR(255)"),
         ("investor_fund_name", "ALTER TABLE user ADD COLUMN investor_fund_name VARCHAR(160)"),
@@ -52,9 +57,15 @@ def ensure_user_schema() -> None:
                 ("fin_model_json", "ALTER TABLE startup ADD COLUMN fin_model_json TEXT"),
                 ("too_registered_at", "ALTER TABLE startup ADD COLUMN too_registered_at DATETIME"),
                 ("bin", "ALTER TABLE startup ADD COLUMN bin VARCHAR(12)"),
+                ("step_branches_json", "ALTER TABLE startup ADD COLUMN step_branches_json TEXT"),
             ]:
                 if column not in startup_cols:
                     conn.execute(text(statement))
+
+        if inspector.has_table("ai_message"):
+            msg_cols = {column["name"] for column in inspector.get_columns("ai_message")}
+            if "meta_json" not in msg_cols:
+                conn.execute(text("ALTER TABLE ai_message ADD COLUMN meta_json TEXT"))
 
         if inspector.has_table("ai_thread"):
             thread_cols = {column["name"] for column in inspector.get_columns("ai_thread")}
@@ -92,9 +103,15 @@ def ensure_user_schema() -> None:
             for column, statement in [
                 ("evidence_filename", "ALTER TABLE step_validation_request ADD COLUMN evidence_filename VARCHAR(255)"),
                 ("evidence_filepath", "ALTER TABLE step_validation_request ADD COLUMN evidence_filepath VARCHAR(500)"),
+                ("poll_deadline_at", "ALTER TABLE step_validation_request ADD COLUMN poll_deadline_at DATETIME"),
             ]:
                 if column not in val_cols:
                     conn.execute(text(statement))
+
+        if inspector.has_table("activity"):
+            activity_cols = {column["name"] for column in inspector.get_columns("activity")}
+            if "ai_generated" not in activity_cols:
+                conn.execute(text("ALTER TABLE activity ADD COLUMN ai_generated BOOLEAN DEFAULT 0"))
 
     db.create_all()
     backfill_roadmap_history()
@@ -184,9 +201,6 @@ def migrate_user_roles() -> None:
 
 def ensure_feed_schema() -> None:
     ensure_user_schema()
-    from ..services.feed_comments_seed import ensure_activity_comments
-
-    ensure_activity_comments()
 
 
 def seed_demo_data() -> None:

@@ -1,6 +1,6 @@
 <div class="reactions-row">
   {% set rc = feed_item.reaction_counts|default({}) %}
-  {% set ur = feed_item.user_reactions|default(set()) %}
+  {% set ur = feed_item.user_reactions|default([], true) %}
   <form hx-post="{{ url_for('extensions.feed_react', activity_id=feed_item.activity.id, reaction='fire') }}" hx-target="closest .reactions-row" hx-swap="outerHTML" class="inline-form"><button type="submit" class="{% if 'fire' in ur %}is-active{% endif %}">🔥{% if rc.fire %} {{ rc.fire }}{% endif %}</button></form>
   <form hx-post="{{ url_for('extensions.feed_react', activity_id=feed_item.activity.id, reaction='idea') }}" hx-target="closest .reactions-row" hx-swap="outerHTML" class="inline-form"><button type="submit" class="{% if 'idea' in ur %}is-active{% endif %}">💡{% if rc.idea %} {{ rc.idea }}{% endif %}</button></form>
   <form hx-post="{{ url_for('extensions.feed_react', activity_id=feed_item.activity.id, reaction='ship') }}" hx-target="closest .reactions-row" hx-swap="outerHTML" class="inline-form"><button type="submit" class="{% if 'ship' in ur %}is-active{% endif %}">🚀{% if rc.ship %} {{ rc.ship }}{% endif %}</button></form>

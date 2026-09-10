@@ -1,17 +1,48 @@
+{% from "components/_role_icon.html" import role_chip %}
 {% macro startup_card(startup, show_owner=false, href=none) %}
+{%- set health_val = startup.health|int -%}
+{%- set health_pct = health_val if health_val <= 100 else 100 -%}
 <a class="startup-card card-link" href="{{ href or url_for('main.startup_detail', startup_id=startup.id) }}">
+  <div class="startup-card__top">
+    <span class="startup-card__stage">{{ startup.stage }}</span>
+    <span class="startup-card__arrow" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+    </span>
+  </div>
   <div class="startup-card__main">
-    <p class="eyebrow">{{ startup.stage }}</p>
     <h2>{{ startup.name }}</h2>
-    <p>{{ startup.tagline }}</p>
+    <p class="startup-card__tagline">{{ startup.tagline }}</p>
     {% if show_owner and startup.owner %}
-    <small>{{ startup.owner.name }} · {{ startup.owner.role|user_role }}</small>
+    <small class="startup-card__owner">{{ startup.owner.name }} · {{ role_chip(startup.owner.role) }}</small>
     {% endif %}
   </div>
-  <div class="startup-card__metrics">
-    <div class="metric-pill"><strong>{{ startup.health }}</strong><span>health</span></div>
-    <div class="metric-pill"><strong>{{ startup.traction }}</strong><span>traction</span></div>
-    <span class="card-arrow">→</span>
+  <div class="startup-card__metrics" aria-label="Метрики проекта">
+    <div class="metric-pill metric-pill--health">
+      <span class="metric-pill__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>
+        </svg>
+      </span>
+      <span class="metric-pill__copy">
+        <strong>{{ startup.health }}</strong>
+        <span>{{ 'metric.health'|t }}</span>
+      </span>
+    </div>
+    <div class="metric-pill metric-pill--traction">
+      <span class="metric-pill__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M16 7h6v6"/>
+          <path d="m22 7-8.5 8.5-5-5L2 17"/>
+        </svg>
+      </span>
+      <span class="metric-pill__copy">
+        <strong>{{ startup.traction }}</strong>
+        <span>{{ 'metric.traction'|t }}</span>
+      </span>
+    </div>
+  </div>
+  <div class="startup-card__bar" aria-hidden="true">
+    <span class="startup-card__bar-fill" style="width: {{ health_pct }}%"></span>
   </div>
 </a>
 {% endmacro %}

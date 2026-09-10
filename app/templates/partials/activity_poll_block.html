@@ -18,7 +18,7 @@
   </div>
   <div class="poll-verdict poll-verdict--{{ poll.poll.verdict }}">
     <span class="poll-verdict__label">{{ poll.verdict_label }}</span>
-    <span class="poll-verdict__score">Score {{ poll.poll.score }}</span>
+    <span class="poll-verdict__score">Балл {{ poll.poll.score }}</span>
     {% if poll.total_votes < 5 %}
     <form hx-post="{{ url_for('extensions.poll_refresh', poll_id=poll.poll.id) }}"
       hx-target="#poll-block-{{ poll.poll.id }}" hx-swap="outerHTML" class="inline-form">

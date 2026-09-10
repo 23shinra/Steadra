@@ -1,17 +1,92 @@
-{% macro role_icon(name) %}
-  {% if name == 'rocket' %}
-  <svg viewBox="0 0 24 24"><path d="M12 3l2.2 6.8H21l-5.5 4 2.1 6.7L12 16.8 6.4 20.5l2.1-6.7L3 9.8h6.8L12 3Z"/></svg>
-  {% elif name == 'briefcase' %}
-  <svg viewBox="0 0 24 24"><path d="M8 7V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1"/><path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9Z"/></svg>
-  {% elif name == 'layers' %}
-  <svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
-  {% elif name == 'chart' %}
-  <svg viewBox="0 0 24 24"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M4 19h16"/></svg>
-  {% elif name == 'spark' %}
-  <svg viewBox="0 0 24 24"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.9 4.9 2.8 2.8"/><path d="m16.3 16.3 2.8 2.8"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="m4.9 19.1 2.8-2.8"/><path d="m16.3 7.7 2.8-2.8"/></svg>
-  {% elif name == 'pen' %}
-  <svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/><path d="m13.5 6.5 3 3"/></svg>
-  {% else %}
-  <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 0 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>
-  {% endif %}
-{% endmacro %}
+{# Lucide-style stroke icons — attrs on <svg> so they work without parent CSS #}
+{% macro role_icon(name) -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'rocket' %}
+  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z"/>
+  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z"/>
+  <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+  <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+{%- elif name == 'briefcase' %}
+  <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+  <rect width="20" height="14" x="2" y="6" rx="2"/>
+{%- elif name == 'layers' %}
+  <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
+  <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
+  <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+{%- elif name == 'trend' %}
+  <path d="M3 3v18h18"/>
+  <path d="m19 9-5 5-4-4-6 6"/>
+{%- elif name == 'bot' %}
+  <path d="M12 8V4H8"/>
+  <rect width="16" height="12" x="4" y="8" rx="2"/>
+  <path d="M2 14h2"/>
+  <path d="M20 14h2"/>
+  <path d="M15 13v2"/>
+  <path d="M9 13v2"/>
+  <path d="M9 18h6"/>
+{%- elif name == 'pen' %}
+  <path d="M12 20h9"/>
+  <path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>
+{%- elif name == 'gear' %}
+  <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+  <circle cx="12" cy="12" r="3"/>
+{%- elif name == 'gem' %}
+  <path d="M6 3h12l4 6-10 13L2 9Z"/>
+  <path d="M11 3 8 9l4 13 4-13-3-6"/>
+  <path d="M2 9h20"/>
+{%- else %}
+  <circle cx="12" cy="12" r="3"/>
+  <path d="M12 1v2"/>
+  <path d="M12 21v2"/>
+  <path d="m4.22 4.22 1.42 1.42"/>
+  <path d="m18.36 18.36 1.42 1.42"/>
+  <path d="M1 12h2"/>
+  <path d="M21 12h2"/>
+  <path d="m4.22 19.78 1.42-1.42"/>
+  <path d="m18.36 5.64 1.42-1.42"/>
+{%- endif %}
+</svg>
+{%- endmacro %}
+
+{% macro role_chip(role_value, class='') -%}
+<span class="role-chip{% if class %} {{ class }}{% endif %}">
+  <span class="role-chip__icon">{{ role_icon(role_value|role_icon_name) }}</span>
+  <span class="role-chip__label">{{ role_value|user_role }}</span>
+</span>
+{%- endmacro %}
+
+{% macro role_select(roles, selected_id, field_name='role', select_id='role-select') -%}
+{%- set current = (roles|selectattr('id', 'equalto', selected_id)|list|first) or roles[0] -%}
+<div class="role-select" data-role-select id="{{ select_id }}">
+  <input type="hidden" name="{{ field_name }}" value="{{ current.id }}" data-role-select-input />
+  <button
+    type="button"
+    class="role-select__trigger"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-controls="{{ select_id }}-menu"
+  >
+    <span class="role-select__icon" data-role-select-icon>{{ role_icon(current.icon) }}</span>
+    <span class="role-select__text" data-role-select-label>{{ current.label }}</span>
+    <span class="role-select__chev" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+    </span>
+  </button>
+  <div class="role-select__menu" id="{{ select_id }}-menu" role="listbox" hidden>
+    {% for role in roles %}
+    <button
+      type="button"
+      class="role-select__option{% if role.id == current.id %} is-active{% endif %}"
+      role="option"
+      aria-selected="{{ 'true' if role.id == current.id else 'false' }}"
+      data-role-id="{{ role.id }}"
+      data-role-label="{{ role.label }}"
+    >
+      <span class="role-select__icon">{{ role_icon(role.icon) }}</span>
+      <span class="role-select__text">{{ role.label }}</span>
+      <span class="role-select__check" aria-hidden="true">{% if role.id == current.id %}✓{% endif %}</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{%- endmacro %}

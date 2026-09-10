@@ -1,12 +1,22 @@
-const CACHE_NAME = "kangaroo-pwa-v59";
+const CACHE_NAME = "kangaroo-pwa-v123";
+const OFFLINE_URL = "/offline";
 const ASSETS = [
+  "/offline",
   "/static/manifest.webmanifest",
   "/static/icons/icon-192.svg",
   "/static/icons/icon-512.svg",
+  "/static/css/app.css",
+  "/static/js/app.js",
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.all(
+        ASSETS.map((url) => cache.add(url).catch(() => undefined))
+      )
+    )
+  );
   self.skipWaiting();
 });
 
@@ -55,19 +65,23 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   const isStatic = url.pathname.startsWith("/static/");
+  const isNavigate = event.request.mode === "navigate";
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (isStatic && response.ok && !url.pathname.endsWith(".js") && !url.pathname.endsWith(".css")) {
+        if (response.ok && (isStatic || url.pathname === OFFLINE_URL)) {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
         return response;
       })
-      .catch(() => {
-        if (isStatic) {
-          return caches.match(event.request);
+      .catch(async () => {
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        if (isNavigate) {
+          const offline = await caches.match(OFFLINE_URL);
+          if (offline) return offline;
         }
         return Response.error();
       })

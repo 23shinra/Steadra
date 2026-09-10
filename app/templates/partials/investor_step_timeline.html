@@ -14,7 +14,7 @@
         <td>
           <strong>{{ loop.index }}. {{ step.label }}</strong>
           {% if step.evidence_url %}
-          <a class="investor-timeline__proof" href="{{ step.evidence_url }}" target="_blank" rel="noopener">proof</a>
+          <a class="investor-timeline__proof" href="{{ step.evidence_url }}" target="_blank" rel="noopener">{{ 'common.proof'|t }}</a>
           {% endif %}
         </td>
         <td>

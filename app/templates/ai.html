@@ -5,10 +5,27 @@
   <div class="chat-sidebar-backdrop" id="chat-sidebar-backdrop"></div>
   <aside class="chat-sidebar" id="chat-sidebar" aria-label="История чатов">
     <div class="chat-sidebar__head">
-      <a class="chat-new-btn" href="{{ url_for('main.ai') }}">
+      {% if can_start_new_idea %}
+      <form method="post" action="{{ url_for('main.ai_new_thread') }}" class="chat-new-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button class="chat-new-btn" type="submit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Новый чат
+        </button>
+      </form>
+      {% else %}
+      <span class="chat-new-btn is-disabled" title="{{ idea_limit_message }}" aria-disabled="true">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-        Новый чат
-      </a>
+        Лимит идей
+      </span>
+      {% endif %}
+      <button type="button" class="chat-sidebar-collapse" id="chat-sidebar-collapse" aria-label="Скрыть историю" title="Скрыть историю">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2"/>
+          <path d="M9 4v16"/>
+          <path d="m15 9-3 3 3 3"/>
+        </svg>
+      </button>
       <button type="button" class="chat-sidebar-close" id="chat-sidebar-close" aria-label="Закрыть список">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
@@ -18,6 +35,27 @@
     </nav>
   </aside>
 
+  <div class="chat-rail-fab" id="chat-rail-fab" hidden>
+    {% if can_start_new_idea %}
+    <form method="post" action="{{ url_for('main.ai_new_thread') }}" class="chat-rail-fab__form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button type="submit" class="chat-rail-fab__btn chat-rail-fab__new" aria-label="Новый чат" title="Новый чат">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+        </svg>
+      </button>
+    </form>
+    {% else %}
+    <span class="chat-rail-fab__btn chat-rail-fab__new is-disabled" title="{{ idea_limit_message }}" aria-disabled="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+      </svg>
+    </span>
+    {% endif %}
+  </div>
+
   <div class="chat-main">
     <header class="chat-header">
       <button type="button" class="chat-history-btn" id="chat-history-btn" aria-label="История чатов" aria-expanded="false" aria-controls="chat-sidebar">
@@ -25,58 +63,146 @@
           <path d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
       </button>
-      <div class="chat-header__avatar">K</div>
       <div class="chat-header__meta">
-        <strong id="chat-header-title">{% if active_thread %}{{ active_thread.title }}{% else %}Личный помощник{% endif %}</strong>
-        <span>онлайн · жёсткий режим</span>
+        <div class="chat-header__title-row">
+          <strong id="chat-header-title">{% if active_thread %}{{ active_thread.title }}{% else %}Личный помощник{% endif %}</strong>
+        </div>
       </div>
       <div class="chat-header__actions" id="chat-progress-btn-wrap">
+        <span
+          class="chat-header__status is-online"
+          id="chat-online-status"
+          role="status"
+          aria-label="Сейчас онлайн"
+          data-tooltip="Сейчас онлайн"
+        ></span>
         <a class="chat-progress-btn" href="{{ url_for('main.progress_page', startup=progress_startup.id) if progress_startup else url_for('main.progress_page') }}" aria-label="Прогресс">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M4 19h16"/>
-          </svg>
-          <span>Прогресс</span>
+          {% include "components/_chat_map_icon.html" %}
+          <span>Карта</span>
         </a>
       </div>
     </header>
 
-    <div id="chat-messages" class="chat-messages">
-      {% include "partials/chat_messages.html" %}
-    </div>
-
-    {% include "partials/too_chat_submit.html" %}
-    {% include "partials/chat_step_submit.html" %}
-
-    <form
-      id="chat-form"
-      class="chat-composer"
-      method="post"
-      action="{{ url_for('main.ai_chat') }}"
-      hx-post="{{ url_for('main.ai_chat') }}"
-      hx-target="#chat-messages"
-      hx-swap="beforeend"
-    >
-      {{ form.csrf_token }}
-      {{ form.thread_id(id="chat-thread-field") }}
-      <input type="hidden" name="message" id="chat-message-field" value="" />
-      {% if progress_startup %}
-      <div class="chat-map-toggle" id="chat-map-toggle">
-        <label class="chat-map-toggle__label">
-          <input type="checkbox" id="chat-via-map" name="via_map" value="1" checked />
-          <span>По карте прогресса</span>
-        </label>
-        <span class="chat-map-toggle__hint">Включено — ответы по шагам ветки</span>
+    <div class="chat-scroll{% if show_intro %} is-empty{% endif %}" id="chat-scroll">
+      {% if show_intro %}
+      <div class="chat-empty-prompt" id="chat-empty-prompt" data-greeting="{{ chat_greeting }}">
+        <p class="chat-empty-prompt__text"><span class="chat-empty-prompt__line" data-typewriter-greeting></span></p>
       </div>
       {% endif %}
-      <div class="chat-composer__box">
-        <textarea class="chat-input" id="chat-input" rows="1" placeholder="Напиши идею или вопрос..." autocomplete="off"></textarea>
-        <button class="chat-send" type="submit" aria-label="Отправить">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3.4 20.6 21 12 3.4 3.4l-.1 7.2 12.2 1.6-12.2 1.6.1 7.2Z"/>
-          </svg>
-        </button>
+      <div id="chat-messages" class="chat-messages">
+        {% include "partials/chat_messages.html" %}
+      </div>
+    </div>
+
+    <div class="chat-footer" id="chat-footer">
+      <div class="chat-composer-shell{% if show_step_submit or show_too_submit %} has-step-tab{% endif %}">
+        <form
+          id="chat-form"
+          class="chat-composer"
+          method="post"
+          action="{{ url_for('main.ai_chat') }}"
+          hx-post="{{ url_for('main.ai_chat') }}"
+          hx-target="#chat-messages"
+          hx-swap="beforeend"
+        >
+          {{ form.csrf_token }}
+          {{ form.thread_id(id="chat-thread-field") }}
+          <input type="hidden" name="message" id="chat-message-field" value="" />
+          {% if progress_startup %}
+          {% include "partials/chat_map_toggle.html" %}
+          {% endif %}
+        </form>
+
+        <div class="chat-composer__box{% if show_step_submit or show_too_submit %} has-step-tab{% endif %}">
+          {% if progress_startup %}
+          <div class="chat-attach-wrap" id="chat-attach-wrap">
+            <button type="button" class="chat-attach" id="chat-attach-btn" aria-label="Вложения" aria-expanded="false" aria-controls="chat-attach-menu" title="Вложения">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21.4 11.6 12.1 20.9a5.5 5.5 0 0 1-7.8-7.8l9.9-9.9a3.5 3.5 0 0 1 5 5l-9.9 9.8a1.5 1.5 0 0 1-2.1-2.1l8.5-8.5"/>
+              </svg>
+            </button>
+            <div class="chat-attach-menu" id="chat-attach-menu" hidden role="menu" aria-label="Тип вложения">
+              <button type="button" class="chat-attach-menu__item" role="menuitem" data-attach-kind="photo" data-accept="image/*">
+                <span class="chat-attach-menu__icon chat-attach-menu__icon--photo" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                </span>
+                <span>Фото</span>
+              </button>
+              <button type="button" class="chat-attach-menu__item" role="menuitem" data-attach-kind="video" data-accept="video/*">
+                <span class="chat-attach-menu__icon chat-attach-menu__icon--video" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>
+                </span>
+                <span>Видео</span>
+              </button>
+              <button type="button" class="chat-attach-menu__item" role="menuitem" data-attach-kind="document" data-accept=".pptx,.pdf,.txt,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain">
+                <span class="chat-attach-menu__icon chat-attach-menu__icon--doc" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M8 3h6l4 4v14H8z"/><path d="M14 3v4h4M10 12h6M10 16h6"/></svg>
+                </span>
+                <span>Документ</span>
+              </button>
+            </div>
+            <input
+              type="file"
+              id="chat-attach-file"
+              hidden
+              data-attach-url="{{ url_for('extensions.pitch_analyze_chat', startup_id=progress_startup.id) }}"
+            />
+          </div>
+          {% endif %}
+          <textarea
+            class="chat-input"
+            id="chat-input"
+            form="chat-form"
+            name="message_ui"
+            rows="1"
+            placeholder="…"
+            autocomplete="off"
+          ></textarea>
+          {% if show_step_submit or show_too_submit %}
+          <div class="chat-composer__tabs" id="chat-inline-panels">
+            {% include "partials/too_chat_submit.html" %}
+            {% include "partials/chat_step_submit.html" %}
+          </div>
+          {% endif %}
+          <button class="chat-send" type="submit" form="chat-form" aria-label="Отправить">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3.4 20.6 21 12 3.4 3.4l-.1 7.2 12.2 1.6-12.2 1.6.1 7.2Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<dialog class="app-modal" id="chat-delete-modal" data-chat-delete-modal>
+  <div class="app-modal__sheet">
+    <header class="app-modal__head">
+      <div>
+        <p class="app-modal__eyebrow">Удаление</p>
+        <strong class="app-modal__title">Удалить проект?</strong>
+      </div>
+      <button type="button" class="app-modal__close" data-chat-delete-close aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </header>
+    <p class="app-modal__hint" data-chat-delete-copy>
+      Чат и все данные проекта будут удалены без восстановления.
+    </p>
+    <form
+      method="post"
+      action="{{ url_for('main.ai_delete_thread') }}"
+      hx-post="{{ url_for('main.ai_delete_thread') }}"
+      hx-swap="none"
+      data-chat-delete-form
+    >
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="thread_id" value="" data-chat-delete-thread-id />
+      <div class="app-modal__actions">
+        <button type="button" class="btn btn-ghost" data-chat-delete-close>Отмена</button>
+        <button type="submit" class="btn btn-danger">Да, удалить</button>
       </div>
     </form>
   </div>
-</section>
+</dialog>
 {% endblock %}

@@ -1,49 +1,170 @@
 {% extends "base.html" %}
 {% block title %}Анализ питча · {{ startup.name }}{% endblock %}
 {% block content %}
+{% set score = (analysis.score if analysis and analysis.score is not none else 0)|int %}
+{% set verdict = 'сильный' if score >= 66 else 'нормальный' if score >= 46 else 'слабый' %}
+{% set ready = score >= 60 %}
+{% set tone = 'good' if score >= 66 else 'mid' if score >= 46 else 'weak' %}
 <section class="screen stack-lg">
   <header class="page-title">
     <a class="back-link" href="{{ url_for('main.progress_page', startup=startup.id) }}">← Карта</a>
-    <h1>Анализ питча · {{ startup.name }}</h1>
-    <p class="muted">Вставь текст слайдов — AI оценит готовность к инвестору.</p>
+    <h1>Анализ питча</h1>
+    <p class="muted">{{ startup.name }}</p>
   </header>
 
-  <form class="card stack" method="post">
-    {{ form.csrf_token }}
-    <label class="field">
-      <span>Текст питча</span>
-      {{ form.pitch_text(class_="input", rows="12", placeholder="Slide 1 Problem: ...\nSlide 2 Solution: ...") }}
-    </label>
-    <button type="submit" class="btn btn-primary">Разобрать AI</button>
-  </form>
-
   {% if analysis %}
-  <article class="card pitch-analysis">
-    <div class="pitch-score pitch-score--{% if analysis.score >= 60 %}good{% elif analysis.score >= 40 %}mid{% else %}weak{% endif %}">
-      <h2>Score {{ analysis.score }}/100</h2>
-      <p>{{ analysis.verdict }} · {% if analysis.investor_ready %}готов с доработками{% else %}нужна доработка{% endif %}</p>
+  <article class="pitch-report pitch-report--{{ tone }}" data-roast-card>
+    <header class="pitch-report__hero">
+      <div class="pitch-report__score" data-score="{{ score }}">
+        <strong class="pitch-report__score-num">{{ score }}</strong>
+        <span class="pitch-report__score-max">/100</span>
+      </div>
+      <div class="pitch-report__meta">
+        <p class="pitch-report__verdict">{{ verdict|capitalize }} дек</p>
+        {% if ready %}
+        <span class="pitch-report__badge pitch-report__badge--ready">Можно показывать</span>
+        {% else %}
+        <span class="pitch-report__badge pitch-report__badge--wait">Ещё рано инвестору</span>
+        {% endif %}
+        {% if analysis.delta is not none %}
+        <p class="pitch-report__delta pitch-report__delta--{{ 'up' if analysis.delta > 0 else 'down' if analysis.delta < 0 else 'same' }}">
+          {% if analysis.delta > 0 %}+{{ analysis.delta }} к прошлому {{ analysis.previous_score }}%
+          {% elif analysis.delta < 0 %}{{ analysis.delta }} к прошлому {{ analysis.previous_score }}%
+          {% else %}Как в прошлый раз{% endif %}
+        </p>
+        {% endif %}
+      </div>
+    </header>
+
+    {% if analysis.filename or analysis.reviewed_at %}
+    <p class="pitch-report__file">
+      {% if analysis.filename %}<span>{{ analysis.filename }}</span>{% endif %}
+      {% if analysis.reviewed_at %}<span>{{ analysis.reviewed_at[:16].replace('T', ' ') }}</span>{% endif %}
+    </p>
+    {% endif %}
+
+    {% if analysis.summary %}
+    <p class="pitch-report__summary">{{ analysis.summary }}</p>
+    {% endif %}
+
+    {% if analysis.strengths or analysis.weaknesses %}
+    <div class="pitch-report__split">
+      {% if analysis.strengths %}
+      <section class="pitch-report__panel pitch-report__panel--pros">
+        <h2>Сильное</h2>
+        <ul>
+          {% for s in analysis.strengths %}
+          <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+      {% if analysis.weaknesses %}
+      <section class="pitch-report__panel pitch-report__panel--cons">
+        <h2>Слабое</h2>
+        <ul>
+          {% for s in analysis.weaknesses %}
+          <li>{{ s }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
     </div>
-    <p>{{ analysis.summary }}</p>
-    {% if analysis.strengths %}
-    <h3>Сильные стороны</h3>
-    <ul>{% for s in analysis.strengths %}<li>{{ s }}</li>{% endfor %}</ul>
     {% endif %}
-    {% if analysis.weaknesses %}
-    <h3>Слабые места</h3>
-    <ul>{% for s in analysis.weaknesses %}<li>{{ s }}</li>{% endfor %}</ul>
+
+    {% if analysis.slides %}
+    <section class="pitch-report__slides">
+      <h2>По слайдам</h2>
+      <ol class="pitch-slides">
+        {% for sf in analysis.slides %}
+        <li class="pitch-slide pitch-slide--{{ sf.score }}">
+          <div class="pitch-slide__head">
+            <strong>{{ sf.num }}. {{ sf.title }}</strong>
+            <span>{{ sf.score }}/5</span>
+          </div>
+          {% if sf.issue %}<p class="pitch-slide__issue">{{ sf.issue }}</p>{% endif %}
+          {% if sf.fix %}<p class="pitch-slide__fix">{{ sf.fix }}</p>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% elif analysis.slides_feedback %}
+    <section class="pitch-report__slides">
+      <h2>По слайдам</h2>
+      {% for sf in analysis.slides_feedback %}
+      <article class="pitch-slide-feedback">
+        <strong>{{ sf.slide }}</strong>
+        <p class="muted">{{ sf.issue }}</p>
+        <p>{{ sf.fix }}</p>
+      </article>
+      {% endfor %}
+    </section>
     {% endif %}
-    {% if analysis.slides_feedback %}
-    <h3>По слайдам</h3>
-    {% for sf in analysis.slides_feedback %}
-    <article class="pitch-slide-feedback">
-      <strong>{{ sf.slide }}</strong>
-      <p class="muted">{{ sf.issue }}</p>
-      <p>→ {{ sf.fix }}</p>
-    </article>
-    {% endfor %}
+
+    {% if analysis.history %}
+    <section class="pitch-report__history">
+      <h2>История</h2>
+      <ul class="pitch-history">
+        {% for h in analysis.history|reverse %}
+        <li>{{ h.score }}% · {{ h.verdict or '—' }}{% if h.filename %} · {{ h.filename }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </section>
     {% endif %}
   </article>
+
+  <details class="pitch-recheck">
+    <summary>Перепроверить другой файл</summary>
+    <form class="stack" method="post" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+      <label class="field">
+        <span>Новая презентация (.pptx, .pdf)</span>
+        {{ form.pitch_file(class_="input", accept=".pptx,.pdf,.txt") }}
+        {% if form.pitch_file.errors %}<p class="form-error">{{ form.pitch_file.errors[0] }}</p>{% endif %}
+      </label>
+      <label class="field">
+        <span>Или текст слайдов</span>
+        {{ form.pitch_text(class_="input ui-autosize", rows="1", placeholder="Слайд 1. Проблема: …") }}
+        {% if form.pitch_text.errors %}<p class="form-error">{{ form.pitch_text.errors[0] }}</p>{% endif %}
+      </label>
+      <button class="btn btn-primary" type="submit">Перепроверить</button>
+    </form>
+  </details>
+  {% else %}
+  <form class="card stack" method="post" enctype="multipart/form-data">
+    {{ form.csrf_token }}
+    <label class="field">
+      <span>Презентация (.pptx, .pdf)</span>
+      {{ form.pitch_file(class_="input", accept=".pptx,.pdf,.txt") }}
+      {% if form.pitch_file.errors %}<p class="form-error">{{ form.pitch_file.errors[0] }}</p>{% endif %}
+    </label>
+    <label class="field">
+      <span>Или текст слайдов</span>
+      {{ form.pitch_text(class_="input ui-autosize", rows="1", placeholder="Слайд 1. Проблема: …\nСлайд 2. Решение: …") }}
+      {% if form.pitch_text.errors %}<p class="form-error">{{ form.pitch_text.errors[0] }}</p>{% endif %}
+    </label>
+    <button class="btn btn-primary" type="submit">Разобрать AI</button>
+  </form>
   {% endif %}
-  <p class="hint">AI-запросов осталось: {{ ai_remaining }}</p>
 </section>
+{% endblock %}
+{% block page_scripts %}
+<script>
+(function () {
+  const scoreEl = document.querySelector(".pitch-report__score[data-score]");
+  if (!scoreEl) return;
+  const target = Math.max(0, Math.min(100, Number(scoreEl.dataset.score || 0)));
+  const numEl = scoreEl.querySelector(".pitch-report__score-num");
+  if (!numEl) return;
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / 700);
+    const eased = 1 - Math.pow(1 - t, 3);
+    numEl.textContent = String(Math.round(target * eased));
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  numEl.textContent = "0";
+  requestAnimationFrame(() => requestAnimationFrame(tick));
+})();
+</script>
 {% endblock %}

@@ -28,8 +28,12 @@ def run_retention_push_campaign() -> int:
         days = days_on_current_step(startup, steps)
         if days is None or days < 3:
             continue
-        if user.created_at and user.created_at > cutoff:
-            continue
+        if user.created_at:
+            created = user.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            if created > cutoff:
+                continue
         notify(
             user,
             "retention",
@@ -42,6 +46,12 @@ def run_retention_push_campaign() -> int:
         send_push(user, "Kangaroo", f"Шаг ждёт: {startup.name}")
         count += 1
     return count
+
+
+def run_poll_validation_expiry() -> int:
+    from .step_validation import expire_poll_validations
+
+    return expire_poll_validations()
 
 
 def run_weekly_goal_reminders() -> int:

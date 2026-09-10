@@ -53,7 +53,14 @@ def inbox(user: User) -> list[dict]:
         .group_by(DirectMessage.recipient_id, DirectMessage.sender_id)
         .subquery()
     )
-    messages = DirectMessage.query.order_by(DirectMessage.created_at.desc()).limit(100).all()
+    messages = (
+        DirectMessage.query.filter(
+            or_(DirectMessage.sender_id == user.id, DirectMessage.recipient_id == user.id)
+        )
+        .order_by(DirectMessage.created_at.desc())
+        .limit(100)
+        .all()
+    )
     seen = set()
     threads = []
     for msg in messages:
@@ -78,3 +85,13 @@ def mark_read(user: User, other_id: int) -> None:
         DirectMessage.read_at.is_(None)
     ).update({"read_at": datetime.now(timezone.utc)})
     db.session.commit()
+
+
+def unread_dm_count(user: User | None) -> int:
+    if not user:
+        return 0
+    return (
+        DirectMessage.query.filter_by(recipient_id=user.id)
+        .filter(DirectMessage.read_at.is_(None))
+        .count()
+    )

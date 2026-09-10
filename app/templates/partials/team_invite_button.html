@@ -2,19 +2,29 @@
 {% set invite_status = invite_status|default(feed_item.invite_status if feed_item is defined else 'hidden') %}
 {% set activity_id = activity_id|default(feed_item.activity.id if feed_item is defined else '') %}
 {% set invite_startup = invite_startup|default(feed_item.invite_startup if feed_item is defined else none) %}
-{% if invite_status == 'ready' %}
+{% if invite_status == 'ready' and invitee %}
 <form
   class="team-invite-form"
+  method="post"
+  action="{{ url_for('main.team_invite', user_id=invitee.id) }}"
   hx-post="{{ url_for('main.team_invite', user_id=invitee.id) }}"
   hx-target="#team-invite-{{ activity_id }}"
   hx-swap="innerHTML"
+  data-team-invite-form
 >
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
   <input type="hidden" name="activity_id" value="{{ activity_id }}" />
-  <button class="btn btn-ghost team-invite-btn" type="submit">
+  <button
+    class="btn btn-ghost team-invite-btn"
+    type="button"
+    data-team-invite-open
+    data-invitee-name="{{ invitee.name }}"
+    data-startup-name="{{ invite_startup.name if invite_startup else 'твой проект' }}"
+  >
     <span aria-hidden="true">👥</span>
     Пригласить в команду
   </button>
+  <button type="submit" class="sr-only" data-team-invite-submit tabindex="-1" aria-hidden="true">Отправить</button>
 </form>
 {% elif invite_status == 'pending' %}
 <p class="team-invite-status team-invite-status--pending">Приглашение отправлено · ждём ответ</p>

@@ -1,0 +1,15 @@
+{% set can_validate = not pending_validation or pending_validation.status in ['ai_rejected', 'admin_rejected'] %}
+{% if weekly_goals.done and can_validate %}
+<div class="step-goals__cta">
+  {% if weekly_goals.all_done %}
+  <p class="step-goals__nudge">Все задачи закрыты. Отправь шаг на проверку в чате.</p>
+  {% else %}
+  <p class="step-goals__nudge">Есть прогресс — можно валидировать шаг в AI-чате.</p>
+  {% endif %}
+  {% with thread=thread, btn_class='btn btn-primary full', label='Перейти в чат и проверить шаг' %}
+    {% include "partials/_open_chat.html" %}
+  {% endwith %}
+</div>
+{% elif weekly_goals.all_done %}
+<p class="step-goals__nudge muted">Все задачи закрыты — отчёт уже на проверке.</p>
+{% endif %}

@@ -1,0 +1,6 @@
+<span id="step-goals-count" hx-swap-oob="innerHTML">{{ weekly_goals.done }}/{{ weekly_goals.total }}</span>
+<div id="step-goals-cta-wrap" class="step-goals__cta-wrap{% if weekly_goals.done %} is-open{% endif %}{% if cta_enter %} is-enter{% endif %}" hx-swap-oob="outerHTML">
+  <div class="step-goals__cta-slot">
+    {% include "partials/step_goals_cta.html" %}
+  </div>
+</div>

@@ -1,43 +1,70 @@
 {% if show_too_submit and progress_startup %}
-<article class="chat-too-card" id="chat-too-card">
-  <div class="chat-too-card__head">
-    <strong>Уже есть ТОО?</strong>
-    <p class="muted">Отправь BIN и выписку — админ проверит на странице «Валидация ТОО».</p>
+<div class="chat-step-rail{% if too_pending %} is-open{% endif %}" id="chat-too-card" data-step-card>
+  <button
+    type="button"
+    class="chat-step-tab"
+    data-step-card-toggle
+    aria-expanded="{{ 'true' if too_pending else 'false' }}"
+    aria-controls="chat-too-card-body"
+    title="ТОО"
+    aria-label="Заявка ТОО"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 20V9l8-5 8 5v11"/>
+      <path d="M9 20v-6h6v6"/>
+    </svg>
+  </button>
+  <div class="chat-step-drawer" id="chat-too-card-body" data-step-card-body role="dialog" aria-label="Проверка ТОО" {% if not too_pending %}hidden{% endif %}>
+    <div class="chat-step-drawer__head">
+      <div>
+        <p class="chat-step-drawer__eyebrow">ТОО</p>
+        <strong>Уже есть ТОО?</strong>
+      </div>
+      <button type="button" class="chat-step-drawer__close" data-step-card-toggle aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <p class="muted chat-step-drawer__help">Отправь BIN и выписку — админ проверит на странице «Валидация ТОО».</p>
+    {% if too_pending %}
+    <p class="flash flash-info">Заявка на проверку ТОО уже отправлена. Ждём решения админа.</p>
+    {% else %}
+    <form class="stack chat-too-form"
+      method="post"
+      enctype="multipart/form-data"
+      action="{{ url_for('main.too_submit', startup_id=progress_startup.id) }}"
+      hx-post="{{ url_for('main.too_submit', startup_id=progress_startup.id) }}"
+      hx-target="#chat-too-card"
+      hx-swap="outerHTML"
+      hx-disabled-elt="find button[type=submit]"
+      data-busy-label="Отправляем…">
+      {{ too_form.csrf_token }}
+      <input type="hidden" name="thread_id" value="{{ active_thread.id }}" />
+      <label class="field">
+        <span>Название ТОО</span>
+        {{ too_form.company_name(class_="input", placeholder="ТОО «...»") }}
+      </label>
+      <label class="field">
+        <span>BIN (12 цифр)</span>
+        {{ too_form.bin(class_="input", placeholder="123456789012", inputmode="numeric", maxlength="12") }}
+      </label>
+      <label class="field">
+        <span>Комментарий из чата</span>
+        {{ too_form.message(class_="input ui-autosize", rows="1", placeholder="Когда зарегистрировали, налоговый режим, что приложить...") }}
+      </label>
+      <label class="field">
+        <span>Ссылка на выписку eGov</span>
+        {{ too_form.evidence_url(class_="input", placeholder="https://...") }}
+      </label>
+      <label class="field">
+        <span>Файл (PDF, скрин)</span>
+        <input class="input" type="file" name="evidence_file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
+      </label>
+      <button type="submit" class="btn btn-primary full">
+        <span class="btn__label">Отправить на проверку ТОО</span>
+        <span class="btn__busy htmx-indicator" aria-hidden="true">Отправляем…</span>
+      </button>
+    </form>
+    {% endif %}
   </div>
-  {% if too_pending %}
-  <p class="flash flash-info">Заявка на проверку ТОО уже отправлена. Ждём решения админа.</p>
-  {% else %}
-  <form class="stack chat-too-form"
-    method="post"
-    enctype="multipart/form-data"
-    action="{{ url_for('main.too_submit', startup_id=progress_startup.id) }}"
-    hx-post="{{ url_for('main.too_submit', startup_id=progress_startup.id) }}"
-    hx-target="#chat-too-card"
-    hx-swap="outerHTML">
-    {{ too_form.csrf_token }}
-    <input type="hidden" name="thread_id" value="{{ active_thread.id }}" />
-    <label class="field">
-      <span>Название ТОО</span>
-      {{ too_form.company_name(class_="input", placeholder="ТОО «...»") }}
-    </label>
-    <label class="field">
-      <span>BIN (12 цифр)</span>
-      {{ too_form.bin(class_="input", placeholder="123456789012", inputmode="numeric", maxlength="12") }}
-    </label>
-    <label class="field">
-      <span>Комментарий из чата</span>
-      {{ too_form.message(class_="input", rows="3", placeholder="Когда зарегистрировали, налоговый режим, что приложить...") }}
-    </label>
-    <label class="field">
-      <span>Ссылка на выписку eGov</span>
-      {{ too_form.evidence_url(class_="input", placeholder="https://...") }}
-    </label>
-    <label class="field">
-      <span>Файл (PDF, скрин)</span>
-      <input class="input" type="file" name="evidence_file" accept=".pdf,.png,.jpg,.jpeg,.webp" />
-    </label>
-    <button type="submit" class="btn btn-primary full">Отправить на проверку ТОО</button>
-  </form>
-  {% endif %}
-</article>
+</div>
 {% endif %}

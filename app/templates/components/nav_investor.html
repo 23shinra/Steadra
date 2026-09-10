@@ -1,4 +1,12 @@
 <nav class="tabbar tabbar--investor" aria-label="Навигация инвестора">
+  <span class="tabbar__glass" aria-hidden="true"></span>
+  <a class="tabbar__brand" href="{{ url_for('investor.candidates') }}">
+    <span class="tabbar__brand-mark" aria-hidden="true">K</span>
+    <span class="tabbar__brand-text">
+      <strong>Kangaroo</strong>
+      <small>Investor</small>
+    </span>
+  </a>
   <a class="tab {% if active_tab == 'candidates' %}is-active{% endif %}" href="{{ url_for('investor.candidates') }}">
     <span class="tab-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24"><path d="M4 6h16v12H4z"/><path d="M8 10h8M8 14h5"/></svg>
@@ -10,6 +18,12 @@
       <svg viewBox="0 0 24 24"><path d="M12 3.5 14.8 9l6.2.9-4.5 4.4 1.1 6.2L12 17.8 6.4 20.5l1.1-6.2L3 9.9 9.2 9z"/></svg>
     </span>
     <small>Избранное</small>
+  </a>
+  <a class="tab {% if active_tab == 'messages' %}is-active{% endif %}" href="{{ url_for('extensions.messages_inbox') }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 6.5h16v11H4z"/><path d="m4 7 8 6 8-6"/></svg>
+    </span>
+    <small>Чаты{% if unread_dm_count %} · {{ unread_dm_count }}{% endif %}</small>
   </a>
   <a class="tab {% if active_tab == 'leaderboard' %}is-active{% endif %}" href="{{ url_for('main.leaderboard') }}">
     <span class="tab-icon" aria-hidden="true">

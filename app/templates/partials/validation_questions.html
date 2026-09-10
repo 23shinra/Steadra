@@ -1,0 +1,34 @@
+{% if validation_milestone %}
+<details class="vq-panel">
+  <summary class="vq-panel__summary">
+    <span class="vq-panel__eyebrow">Чеклист к шагу · по желанию</span>
+    <strong>{{ validation_milestone.title }}</strong>
+    <span class="vq-panel__count">{{ validation_milestone.question_count }} подсказок — можно свернуть</span>
+  </summary>
+  <p class="vq-panel__criterion muted">Ориентир: {{ validation_milestone.criterion }}</p>
+
+  {% if validation_milestone.killers %}
+  <details class="vq-group vq-group--key" open>
+    <summary>Главные вопросы · {{ validation_milestone.killers|length }}</summary>
+    <ol class="vq-list vq-list--key">
+      {% for qid, text in validation_milestone.killers %}
+      <li value="{{ qid }}">{{ text }}</li>
+      {% endfor %}
+    </ol>
+  </details>
+  {% endif %}
+
+  {% for group in validation_milestone.groups %}
+  <details class="vq-group">
+    <summary>{{ group.title }} <span class="muted">· {{ group.questions|length }}</span></summary>
+    <ol class="vq-list">
+      {% for qid, text in group.questions %}
+      <li value="{{ qid }}">{{ text }}</li>
+      {% endfor %}
+    </ol>
+  </details>
+  {% endfor %}
+
+  <p class="vq-panel__hint muted">Это подсказки, не отдельное задание. В отчёте достаточно фактов по сути шага.</p>
+</details>
+{% endif %}

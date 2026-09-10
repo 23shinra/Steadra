@@ -1,30 +1,30 @@
-<div class="phone-change-block name-verify-block stack">
+<div class="phone-change-block stack">
   {% if success %}
-  <p class="hint success">{{ success }}</p>
-  {% else %}
-  <p class="hint">Текущий: {{ user.phone }}</p>
-  {% if code_sent %}
+  <p class="phone-change-success">{{ success }}</p>
+  <p id="profile-phone-value" class="ig-edit-static" hx-swap-oob="true">{{ user.phone }}</p>
+  {% elif code_sent %}
   <form class="stack" method="post" action="{{ url_for('auth.phone_change_confirm') }}" hx-post="{{ url_for('auth.phone_change_confirm') }}" hx-target="#phone-change-wrap" hx-swap="innerHTML">
     {{ form.csrf_token }}
     {{ form.new_phone(type="hidden", value=new_phone) }}
+    <p class="phone-change-meta">Код отправлен на <strong>{{ new_phone }}</strong></p>
     <label class="field">
       <span>{{ form.code.label.text }}</span>
-      {{ form.code(class_="input", placeholder="1234", inputmode="numeric") }}
+      {{ form.code(class_="input", placeholder="1234", inputmode="numeric", autocomplete="one-time-code") }}
     </label>
     {% if demo_hint %}<p class="hint">Demo: код <strong>{{ demo_hint }}</strong></p>{% endif %}
     {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
-    <button class="btn btn-primary" type="submit">Подтвердить</button>
+    <button class="btn btn-primary full" type="submit">Подтвердить</button>
   </form>
   {% else %}
   <form class="stack" method="post" action="{{ url_for('auth.phone_change_request') }}" hx-post="{{ url_for('auth.phone_change_request') }}" hx-target="#phone-change-wrap" hx-swap="innerHTML">
     {{ form.csrf_token }}
+    <p class="phone-change-meta">Сейчас: <strong>{{ user.phone }}</strong></p>
     <label class="field">
       <span>{{ form.new_phone.label.text }}</span>
-      {{ form.new_phone(class_="input", placeholder="77010000001", inputmode="numeric") }}
+      {{ form.new_phone(class_="input", placeholder="77010000001", inputmode="numeric", autocomplete="tel") }}
     </label>
     {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
-    <button class="btn btn-ghost" type="submit">Сменить телефон</button>
+    <button class="btn btn-primary full" type="submit">Получить код</button>
   </form>
-  {% endif %}
   {% endif %}
 </div>

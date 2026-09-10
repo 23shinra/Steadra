@@ -5,17 +5,11 @@
 <section class="screen stack-lg admin-page">
   <header class="page-title admin-page__head">
     <div>
-      <p class="eyebrow">Admin</p>
+      <p class="eyebrow">Очередь</p>
       <h1>Валидация</h1>
       <p class="muted">Отчёты фаундеров, вложения и переписка из AI-чата — подтвердите, что шаг реально закрыт.</p>
     </div>
   </header>
-
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <p class="flash flash-{{ category }}">{{ message }}</p>
-    {% endfor %}
-  {% endwith %}
 
   {% if bundles %}
   <div class="admin-validation-list">
@@ -29,6 +23,9 @@
           {{ too_badge(bundle.too) }}
         </div>
         <span class="admin-tag">{{ req.step_label }}</span>
+        {% if req.status == 'pending_poll' %}
+        <span class="admin-tag admin-tag--warn">опрос</span>
+        {% endif %}
       </header>
 
       <div class="admin-validation-card__report">

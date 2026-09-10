@@ -3,12 +3,13 @@ from datetime import date, timedelta
 from ..models import db
 from ..models.entities import StepWeeklyGoal
 from .roadmap import is_finished, step_at, steps_for_startup
+from .step_branches import branches_for_step
 
 GOAL_TEMPLATES: dict[str, list[str]] = {
     "idea_poll": [
-        "Сформулируй гипотезу в одном предложении",
-        "Опубликуй опрос в ленте",
-        "Собери минимум 5 голосов",
+        "Сформулируй гипотезу и отправь отчёт в чате",
+        "Опубликуй опрос в ленте (в течение 24 ч после отчёта)",
+        "Собери минимум 3 голоса",
     ],
     "pitch_pre": [
         "Сгенерируй pre-MVP deck",
@@ -86,7 +87,11 @@ def ensure_weekly_goals(startup) -> list[StepWeeklyGoal]:
         return existing
 
     key = (step.get("key") or "").lower()
-    labels = GOAL_TEMPLATES.get(key, DEFAULT_TEMPLATES)[:3]
+    branch_labels = [b["label"] for b in branches_for_step(startup, step_index)]
+    if branch_labels:
+        labels = branch_labels[:3]
+    else:
+        labels = GOAL_TEMPLATES.get(key, DEFAULT_TEMPLATES)[:3]
     goals = []
     for i, label in enumerate(labels):
         goal = StepWeeklyGoal(

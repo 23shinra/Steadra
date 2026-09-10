@@ -1,0 +1,17 @@
+<form class="stack" method="post" action="{{ url_for('admin.verify_login') }}" hx-post="{{ url_for('admin.verify_login') }}" hx-target="this" hx-swap="outerHTML">
+  {{ form.csrf_token }}
+  {{ form.phone(type="hidden") }}
+  <p class="hint">Код отправлен на <strong>{{ phone }}</strong></p>
+  <label class="field">
+    <span>{{ form.code.label.text }}</span>
+    {{ form.code(class_="input", placeholder="1234", inputmode="numeric", autocomplete="one-time-code", maxlength="6") }}
+  </label>
+  {% if form.code.errors %}
+    <p class="form-error">{{ form.code.errors[0] }}</p>
+  {% endif %}
+  {% if demo_hint %}
+  <p class="hint">Demo: код <strong>{{ demo_hint }}</strong></p>
+  {% endif %}
+  <button class="btn btn-primary" type="submit">Войти</button>
+  <a class="btn btn-ghost" href="{{ url_for('admin.login') }}">Другой номер</a>
+</form>

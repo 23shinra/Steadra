@@ -6,8 +6,17 @@
 <article class="activity-card" id="activity-card-{{ activity.id }}" data-kind="{{ activity.kind }}">
   {{ user_avatar(activity.user, 'mini') }}
   <div class="activity-card__body">
-    <div class="activity-top"><strong>{{ activity.title }}</strong>{% if activity.impact %}<span>+{{ activity.impact }}</span>{% endif %}</div>
+    <div class="activity-top">
+      <strong>{{ activity.title }}</strong>
+      <div class="activity-top__meta">
+        <span class="activity-kind activity-kind--{{ activity.kind }}">{{ activity.kind|activity_kind }}</span>
+        {% if activity.impact %}<span class="activity-impact">+{{ activity.impact }}</span>{% endif %}
+      </div>
+    </div>
     <p>{{ activity.body }}</p>
+    {% if activity.ai_generated %}
+    <p class="activity-ai-badge">{{ 'feed.ai_generated'|t }}</p>
+    {% endif %}
     {% if activity.kind == 'poll' and feed_item.poll %}
     {% include "partials/activity_poll_block.html" %}
     {% endif %}
@@ -16,12 +25,10 @@
       {% if activity.startup %}
         · <a href="{{ url_for('main.startup_detail', startup_id=activity.startup.id) }}">{{ activity.startup.name }}</a>
       {% endif %}
-      · {{ activity.kind }}
     </small>
     {% if show_social|default(true) %}
     <div class="activity-card__social">
       {% include "partials/activity_like_button.html" %}
-      {% include "partials/activity_reactions.html" %}
       <details class="activity-comments-wrap" id="activity-comments-wrap-{{ activity.id }}">
         <summary class="activity-comments-toggle">
           <span class="activity-comments-toggle__icon" aria-hidden="true">💬</span>

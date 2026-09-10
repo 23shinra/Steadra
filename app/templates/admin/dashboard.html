@@ -6,22 +6,134 @@
 <section class="screen stack-lg admin-page">
   <header class="page-title admin-page__head">
     <div>
-      <p class="eyebrow">Admin</p>
+      <p class="eyebrow">Overview</p>
       <h1>Панель управления</h1>
+      <p>Пользователи, проекты и очередь проверки шагов.</p>
     </div>
   </header>
 
   <div class="admin-stats">
-    {{ admin_stat(stats.users, 'Пользователи', 'users') }}
-    {{ admin_stat(stats.startups, 'Проекты', 'startups') }}
-    {{ admin_stat(stats.likes, 'Лайки', 'likes') }}
-    {{ admin_stat(stats.comments, 'Комментарии', 'comments') }}
-    {{ admin_stat(stats.threads, 'AI-чаты', 'threads') }}
-    {{ admin_stat(stats.activities, 'События', 'activities') }}
-    {{ admin_stat(stats.push_subscriptions, 'Push-подписки', 'push') }}
-    {{ admin_stat(stats.unread_notifications, 'Непрочит. уведомления', 'notifications') }}
+    {{ admin_stat(stats.users, 'Пользователи', 'users', tab='overview', target='admin-users') }}
+    {{ admin_stat(stats.startups, 'Проекты', 'startups', tab='overview', target='admin-projects') }}
+    {{ admin_stat(stats.likes, 'Лайки', 'likes', tab='activities') }}
+    {{ admin_stat(stats.comments, 'Комментарии', 'comments', tab='activities') }}
   </div>
 
+  <div class="admin-stats">
+    {{ admin_stat(stats.threads, 'AI-чаты', 'threads', tab='threads') }}
+    {{ admin_stat(stats.activities, 'События', 'activities', tab='activities') }}
+    {{ admin_stat(stats.push_subscriptions, 'Push-подписки', 'push', tab='push') }}
+    {{ admin_stat(stats.unread_notifications, 'Непрочит. уведомления', 'notifications', tab='notifications') }}
+  </div>
+
+  <div class="admin-dashboard-switcher" id="admin-dashboard-switcher">
+    <nav class="admin-dashboard-tablabels" aria-label="Разделы">
+      <button type="button" class="admin-dashboard-tablabel is-active" data-admin-tab="overview" aria-selected="true">Обзор</button>
+      <button type="button" class="admin-dashboard-tablabel" data-admin-tab="threads" aria-selected="false">AI-чаты</button>
+      <button type="button" class="admin-dashboard-tablabel" data-admin-tab="activities" aria-selected="false">События</button>
+      <button type="button" class="admin-dashboard-tablabel" data-admin-tab="push" aria-selected="false">Push-подписки</button>
+      <button type="button" class="admin-dashboard-tablabel" data-admin-tab="notifications" aria-selected="false">Уведомления</button>
+    </nav>
+
+    <div class="admin-dashboard-panels" id="admin-dashboard-panels" hidden>
+    <article class="admin-panel admin-dashboard-panel" data-admin-panel="threads" hidden>
+      <h2>AI-чаты</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wide">
+          <thead>
+            <tr><th>ID</th><th>Название</th><th>Фаза</th><th>Пользователь</th><th>Обновлён</th></tr>
+          </thead>
+          <tbody>
+            {% for thread in threads %}
+            <tr>
+              <td><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">#{{ thread.id }}</a></td>
+              <td class="admin-table__clip"><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">{{ thread.title }}</a></td>
+              <td>{{ thread.phase|thread_phase }}</td>
+              <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=thread.user_id) }}">#{{ thread.user_id }}</a></td>
+              <td>{{ thread.updated_at.strftime('%d.%m.%Y %H:%M') if thread.updated_at else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="muted">Нет чатов</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="admin-panel admin-dashboard-panel" data-admin-panel="activities" hidden>
+      <h2>События</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wide">
+          <thead>
+            <tr><th>ID</th><th>Тип</th><th>Заголовок</th><th>Автор</th><th>Дата</th></tr>
+          </thead>
+          <tbody>
+            {% for activity in activities %}
+            <tr>
+              <td>#{{ activity.id }}</td>
+              <td><span class="admin-tag admin-tag--kind">{{ activity.kind|activity_kind }}</span></td>
+              <td class="admin-table__clip">{{ activity.title }}</td>
+              <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=activity.user_id) }}">#{{ activity.user_id }}</a></td>
+              <td>{{ activity.created_at.strftime('%d.%m.%Y %H:%M') if activity.created_at else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="muted">Нет событий</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="admin-panel admin-dashboard-panel" data-admin-panel="push" hidden>
+      <h2>Push-подписки</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wide">
+          <thead>
+            <tr><th>ID</th><th>Пользователь</th><th>Endpoint</th><th>Дата</th></tr>
+          </thead>
+          <tbody>
+            {% for sub in push_subscriptions %}
+            <tr>
+              <td>#{{ sub.id }}</td>
+              <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=sub.user_id) }}">#{{ sub.user_id }}</a></td>
+              <td class="admin-table__clip">{{ sub.endpoint[:72] }}{% if sub.endpoint|length > 72 %}…{% endif %}</td>
+              <td>{{ sub.created_at.strftime('%d.%m.%Y %H:%M') if sub.created_at else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="muted">Нет подписок</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="admin-panel admin-dashboard-panel" data-admin-panel="notifications" hidden>
+      <h2>Непрочитанные уведомления</h2>
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table--wide">
+          <thead>
+            <tr><th>ID</th><th>Тип</th><th>Заголовок</th><th>Пользователь</th><th>Дата</th></tr>
+          </thead>
+          <tbody>
+            {% for note in unread_notifications %}
+            <tr>
+              <td>#{{ note.id }}</td>
+              <td>{{ note.kind|notification_kind }}</td>
+              <td class="admin-table__clip">{{ note.title }}</td>
+              <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=note.user_id) }}">#{{ note.user_id }}</a></td>
+              <td>{{ note.created_at.strftime('%d.%m.%Y %H:%M') if note.created_at else '—' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="muted">Нет непрочитанных</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+    </div>
+  </div>
+
+  <div class="admin-dashboard-overview" id="admin-dashboard-overview">
   {% if pending_validations %}
   <article class="admin-panel">
     <h2>Ожидают личной проверки (AI ✓)</h2>
@@ -97,7 +209,7 @@
   </article>
   {% endif %}
 
-  <article class="admin-panel">
+  <article class="admin-panel" id="admin-users">
     <h2>Пользователи</h2>
     <div class="admin-table-wrap">
       <table class="admin-table admin-table--users admin-table--retention">
@@ -178,7 +290,7 @@
   </article>
   {% endif %}
 
-  <article class="admin-panel">
+  <article class="admin-panel" id="admin-projects">
     <h2>Проекты</h2>
     <div class="admin-table-wrap">
       <table class="admin-table admin-table--wide admin-table--projects">
@@ -203,26 +315,61 @@
       </table>
     </div>
   </article>
-
-  <article class="admin-panel">
-    <h2>Последние AI-чаты</h2>
-    <div class="admin-table-wrap">
-      <table class="admin-table admin-table--wide">
-        <thead>
-          <tr><th>ID</th><th>Название</th><th>Фаза</th><th>Пользователь</th></tr>
-        </thead>
-        <tbody>
-          {% for thread in threads %}
-          <tr>
-            <td><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">#{{ thread.id }}</a></td>
-            <td class="admin-table__clip"><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">{{ thread.title }}</a></td>
-            <td>{{ thread.phase }}</td>
-            <td><a class="admin-link" href="{{ url_for('admin.user_detail', user_id=thread.user_id) }}">#{{ thread.user_id }}</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </article>
+  </div>
 </section>
+{% endblock %}
+{% block page_scripts %}
+{{ super() }}
+<script>
+(function () {
+  const switcher = document.getElementById("admin-dashboard-switcher");
+  const overview = document.getElementById("admin-dashboard-overview");
+  const panels = document.getElementById("admin-dashboard-panels");
+  if (!switcher || !overview || !panels) return;
+
+  const tabs = switcher.querySelectorAll("[data-admin-tab]");
+  const panelItems = panels.querySelectorAll("[data-admin-panel]");
+  const jumps = document.querySelectorAll(".admin-stat[data-admin-tab], .admin-stat[data-admin-scroll]");
+
+  const activate = (tabId, scrollId) => {
+    const nextTab = tabId || "overview";
+    tabs.forEach((tab) => {
+      const active = tab.dataset.adminTab === nextTab;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+    });
+
+    if (nextTab === "overview") {
+      panels.hidden = true;
+      overview.hidden = false;
+      panelItems.forEach((panel) => {
+        panel.hidden = true;
+      });
+    } else {
+      panels.hidden = false;
+      overview.hidden = true;
+      panelItems.forEach((panel) => {
+        panel.hidden = panel.dataset.adminPanel !== nextTab;
+      });
+    }
+
+    if (scrollId) {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(scrollId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  };
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => activate(tab.dataset.adminTab));
+  });
+
+  jumps.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activate(btn.dataset.adminTab || "overview", btn.dataset.adminScroll || "");
+    });
+  });
+})();
+</script>
 {% endblock %}

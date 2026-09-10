@@ -2,12 +2,18 @@
 {% block title %}Вход · Kangaroo{% endblock %}
 {% block content %}
 <section class="auth-screen">
-  <a class="back-link" href="{{ url_for('main.onboarding') }}">← Назад</a>
+  <a class="back-link" href="{{ url_for('main.landing') }}">← Назад</a>
   <div class="auth-card">
     <div class="logo-orb">K</div>
-    <p class="eyebrow">Вход по SMS</p>
+    {% if demo_mode %}
+    <p class="eyebrow">Demo-вход</p>
+    <h1>Вход без Cascade</h1>
+    <p>Временный локальный OTP (потом уберём). Код увидишь на экране / в логах.</p>
+    {% else %}
+    <p class="eyebrow">OTP-вход</p>
     <h1>Вход по телефону</h1>
-    <p>Введи номер — отправим одноразовый код.</p>
+    <p>Введи номер — код придёт в WhatsApp или Telegram.</p>
+    {% endif %}
     <div id="auth-step">
       {% if otp_form %}
         {% include "auth/_otp_form.html" %}

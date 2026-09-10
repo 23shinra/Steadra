@@ -1,0 +1,54 @@
+<div class="chat-feed-autopost" id="chat-feed-autopost">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  {% if feed_draft_error %}
+  <p class="flash flash-error chat-feed-autopost__flash">{{ feed_draft_error }}</p>
+  {% endif %}
+
+  {% if feed_draft_published %}
+  <p class="flash flash-success chat-feed-autopost__flash">Пост опубликован в ленте.</p>
+  <a class="chat-step-drawer__link" href="{{ url_for('main.feed') }}">Открыть ленту →</a>
+  {% elif feed_draft %}
+  <form
+    class="chat-feed-draft"
+    method="post"
+    action="{{ url_for('main.step_feed_publish', startup_id=progress_startup.id) }}"
+    hx-post="{{ url_for('main.step_feed_publish', startup_id=progress_startup.id) }}"
+    hx-target="#chat-feed-autopost"
+    hx-swap="outerHTML"
+    hx-disabled-elt="find button[type=submit]"
+    data-busy-label="Публикуем…"
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <p class="chat-feed-autopost__hint">Проверь текст — личные данные и ссылки уже убраны.</p>
+    <label class="field">
+      <span>Заголовок</span>
+      <input class="input" type="text" name="title" maxlength="160" value="{{ feed_draft.title }}" />
+    </label>
+    <label class="field">
+      <span>Текст поста</span>
+      <textarea class="input ui-autosize" name="body" rows="1" maxlength="900">{{ feed_draft.body }}</textarea>
+    </label>
+    <div class="chat-feed-autopost__actions">
+      <button type="submit" class="btn btn-primary">
+        <span class="btn__label">Опубликовать</span>
+        <span class="btn__busy htmx-indicator" aria-hidden="true">Публикуем…</span>
+      </button>
+    </div>
+  </form>
+  {% else %}
+  <p class="chat-feed-autopost__hint">AI напишет пост для ленты без телефона, BIN, ТОО и других личных данных.</p>
+  <button
+    type="button"
+    class="btn btn-ghost chat-feed-autopost__gen"
+    hx-post="{{ url_for('main.step_feed_draft', startup_id=progress_startup.id) }}"
+    hx-include="closest .chat-step-drawer"
+    hx-target="#chat-feed-autopost"
+    hx-swap="outerHTML"
+    hx-disabled-elt="this"
+    data-busy-label="Пишем…"
+  >
+    <span class="btn__label">Автопост</span>
+    <span class="btn__busy htmx-indicator" aria-hidden="true">Пишем…</span>
+  </button>
+  {% endif %}
+</div>

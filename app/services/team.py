@@ -91,9 +91,14 @@ def send_invite(inviter: User, invitee_id: int, startup_id: int | None = None) -
     )
     db.session.add(invite)
     db.session.commit()
-    from .notifications import notify_team_invite
+    from flask import current_app
 
-    notify_team_invite(invitee, inviter, startup, invite.id)
+    try:
+        from .notifications import notify_team_invite
+
+        notify_team_invite(invitee, inviter, startup, invite.id)
+    except Exception:
+        current_app.logger.exception("team invite notify failed")
     return invite, None
 
 
@@ -107,7 +112,11 @@ def accept_invite(invite: TeamInvitation, user: User) -> tuple[TeamMember | None
         invite.responded_at = datetime.now(timezone.utc)
         db.session.commit()
         return None, "Вы уже в этой команде."
-    member = TeamMember(startup_id=invite.startup_id, user_id=user.id)
+    member = TeamMember(
+        startup_id=invite.startup_id,
+        user_id=user.id,
+        team_role=_team_role_from_user(user),
+    )
     invite.status = TeamInvitation.STATUS_ACCEPTED
     invite.responded_at = datetime.now(timezone.utc)
     db.session.add(member)
@@ -138,16 +147,23 @@ def decline_invite(invite: TeamInvitation, user: User) -> str | None:
     return None
 
 
+def _team_role_from_user(user: User) -> str:
+    label = (getattr(user, "role", None) or "").lower()
+    if any(x in label for x in ("cto", "ai", "билдер", "tech", "инженер", "разраб")):
+        return "cto"
+    if any(x in label for x in ("ceo", "founder", "основател", "product", "продукт")):
+        return "ceo"
+    if any(x in label for x in ("market", "growth", "маркетинг")):
+        return "marketing"
+    return "member"
+
+
 def members_for_startup(startup: Startup) -> list[User]:
-    member_ids = [
-        row.user_id for row in TeamMember.query.filter_by(startup_id=startup.id).order_by(TeamMember.joined_at.asc()).all()
-    ]
-    members = [startup.owner]
-    for user_id in member_ids:
-        user = db.session.get(User, user_id)
-        if user and user.id != startup.owner_id:
-            members.append(user)
-    return members
+    return [row["user"] for row in team_detail(startup)["members"]]
+
+
+def member_rows_for_startup(startup: Startup) -> list[dict]:
+    return team_detail(startup)["members"]
 
 
 def pending_invites_for_user(user: User) -> list[TeamInvitation]:
@@ -206,7 +222,13 @@ def startup_team_profile(startup: Startup) -> dict:
         "days_on_step": days_on_step,
         "weekly_goals": weekly_goals,
         "team": team_detail(startup),
-        "map_nodes": branch_map_state(startup.roadmap_step, steps, logs, startup=startup),
+        "map_nodes": branch_map_state(
+            startup.roadmap_step,
+            steps,
+            logs,
+            startup=startup,
+            goals_done=weekly_goals["done"] if weekly_goals else 0,
+        ),
         "step_timeline": timeline,
         "finished": finished,
     }
@@ -232,11 +254,13 @@ def profile_team_context(profile_user: User, viewer: User | None) -> dict | None
     incoming = pending_invites_for_user(profile_user) if is_own else []
     invite_previews = [invite_preview(inv) for inv in incoming] if is_own else []
     members = members_for_startup(primary) if primary else []
+    member_rows = member_rows_for_startup(primary) if primary else []
     sent = sent_pending_invites(primary) if primary else []
     joined = joined_startups(profile_user) if is_own else []
     return {
         "primary_startup": primary,
         "members": members,
+        "member_rows": member_rows,
         "incoming_invites": incoming,
         "invite_previews": invite_previews,
         "sent_invites": sent,

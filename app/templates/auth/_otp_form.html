@@ -1,10 +1,10 @@
-<form class="stack" method="post" action="{{ url_for('auth.verify_login') }}" hx-post="{{ url_for('auth.verify_login') }}" hx-target="#auth-step" hx-swap="innerHTML">
+<form class="stack" method="post" action="{{ url_for('auth.verify_login') }}" hx-post="{{ url_for('auth.verify_login') }}" hx-target="#auth-step" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]" data-busy-label="Проверяем…">
   {{ otp_form.csrf_token }}
   {{ otp_form.phone(type="hidden") }}
   <p class="hint">Код отправлен на <strong>{{ phone }}</strong></p>
   <label class="field">
     <span>{{ otp_form.code.label.text }}</span>
-    {{ otp_form.code(class_="input", placeholder="1234", inputmode="numeric", autocomplete="one-time-code", maxlength="6") }}
+    {{ otp_form.code(class_="input", placeholder="123456", inputmode="numeric", autocomplete="one-time-code", maxlength="6") }}
   </label>
   {% if otp_form.code.errors %}
     <p class="form-error">{{ otp_form.code.errors[0] }}</p>
@@ -13,6 +13,9 @@
   {% if demo_hint %}
   <p class="hint name-verify-block">Demo: код <strong>{{ demo_hint }}</strong></p>
   {% endif %}
-  <button class="btn btn-primary" type="submit">Войти</button>
+  <button class="btn btn-primary" type="submit">
+    <span class="btn__label">Войти</span>
+    <span class="btn__busy htmx-indicator" aria-hidden="true">Проверяем…</span>
+  </button>
   <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Другой номер</a>
 </form>

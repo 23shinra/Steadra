@@ -5,12 +5,6 @@
 {% block title %}{{ user.name }} · Админ{% endblock %}
 {% block admin_content %}
 <section class="screen stack-lg admin-page">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <p class="flash flash-{{ category }}">{{ message }}</p>
-    {% endfor %}
-  {% endwith %}
-
   <header class="page-title admin-page__head">
     <div>
       <a class="back-link" href="{{ url_for('admin.dashboard') }}">← Панель</a>
@@ -77,7 +71,10 @@
         <p class="eyebrow">Checklist ({{ retention.checklist.done_count }}/{{ retention.checklist.total }})</p>
         <ul class="admin-onboarding-list">
           {% for task in retention.checklist.tasks %}
-          <li class="{% if task.done %}is-done{% endif %}">{{ '✓' if task.done else '○' }} {{ task.label }}</li>
+          <li class="{% if task.done %}is-done{% endif %}">
+            {% include "components/_ui_check_box.html" %}
+            <span>{{ task.label }}</span>
+          </li>
           {% endfor %}
         </ul>
       </div>
@@ -223,7 +220,7 @@
           <tr>
             <td><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">#{{ thread.id }}</a></td>
             <td class="admin-table__clip"><a class="admin-link" href="{{ url_for('admin.thread_detail', thread_id=thread.id) }}">{{ thread.title }}</a></td>
-            <td>{{ thread.phase }}</td>
+            <td>{{ thread.phase|thread_phase }}</td>
             <td>{{ thread.updated_at.strftime('%d.%m.%Y %H:%M') }}</td>
           </tr>
           {% endfor %}
@@ -239,7 +236,7 @@
     <div class="admin-activity-list">
       {% for activity in detail.activities %}
       <div class="admin-activity-item">
-        <span class="admin-tag admin-tag--kind">{{ activity.kind }}</span>
+        <span class="admin-tag admin-tag--kind">{{ activity.kind|activity_kind }}</span>
         <div>
           <strong>{{ activity.title }}</strong>
           <p class="muted">{{ activity.body[:140] }}{% if activity.body|length > 140 %}…{% endif %}</p>

@@ -3,15 +3,24 @@
 {% block title %}{{ page_title }} · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg investor-page">
-  <header class="page-title">
-    <p class="eyebrow">Инвестор</p>
-    <h1>{{ page_title }}</h1>
-    <p class="muted">{{ page_hint }}</p>
+  <header class="page-title page-title--with-actions">
+    <div class="page-title__main">
+      <p class="eyebrow">Инвестор</p>
+      <h1>{{ page_title }}</h1>
+      <p class="muted">{{ page_hint }}</p>
+    </div>
+    {% with show_notifs=false %}
+      {% include "components/header_actions.html" %}
+    {% endwith %}
   </header>
 
   {% if not candidates %}
-  <article class="card investor-empty">
-    <p>{% if active_tab == 'favorites' %}В избранном пока пусто. Отметьте кандидата звёздочкой в списке или карточке.{% else %}Пока нет проектов для просмотра.{% endif %}</p>
+  <article class="empty-card">
+    <strong>{% if active_tab == 'favorites' %}В избранном пусто{% else %}Пока нет проектов{% endif %}</strong>
+    <p>{% if active_tab == 'favorites' %}Отметь кандидата звёздочкой в списке или карточке.{% else %}Когда фаундеры запустят путь — кандидаты появятся здесь.{% endif %}</p>
+    {% if active_tab == 'favorites' %}
+    <a class="btn btn-primary" href="{{ url_for('investor.candidates') }}">Смотреть кандидатов</a>
+    {% endif %}
   </article>
   {% else %}
   <div class="investor-list">

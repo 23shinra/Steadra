@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 
 from . import db
 
@@ -18,11 +19,16 @@ class User(db.Model):
     onboarding_done = db.Column(db.Boolean, nullable=False, default=False)
     account_type = db.Column(db.String(20), nullable=False, default="user")
     locale = db.Column(db.String(5), nullable=False, default="ru")
+    theme = db.Column(db.String(10), nullable=False, default="dark")
     region = db.Column(db.String(80), nullable=True)
     ai_requests_count = db.Column(db.Integer, nullable=False, default=0)
     ai_requests_reset_at = db.Column(db.DateTime, nullable=True)
     is_verified_investor = db.Column(db.Boolean, nullable=False, default=False)
     open_for_messages = db.Column(db.Boolean, nullable=False, default=True)
+    show_in_leaderboard = db.Column(db.Boolean, nullable=False, default=True)
+    show_in_search = db.Column(db.Boolean, nullable=False, default=True)
+    show_projects_public = db.Column(db.Boolean, nullable=False, default=True)
+    show_achievements_public = db.Column(db.Boolean, nullable=False, default=True)
     active_startup_id = db.Column(db.Integer, db.ForeignKey("startup.id", use_alter=True, name="fk_user_active_startup"), nullable=True)
     investor_linkedin = db.Column(db.String(255), nullable=True)
     investor_fund_name = db.Column(db.String(160), nullable=True)
@@ -75,6 +81,7 @@ class Startup(db.Model):
     fin_model_json = db.Column(db.Text, nullable=True)
     too_registered_at = db.Column(db.DateTime, nullable=True)
     bin = db.Column(db.String(12), nullable=True)
+    step_branches_json = db.Column(db.Text, nullable=True)
     owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
     owner = db.relationship("User", back_populates="startups", foreign_keys=[owner_id])
@@ -170,6 +177,7 @@ class RoadmapStepLog(db.Model):
 class StepValidationRequest(db.Model):
     STATUS_PENDING_AI = "pending_ai"
     STATUS_AI_REJECTED = "ai_rejected"
+    STATUS_PENDING_POLL = "pending_poll"
     STATUS_PENDING_ADMIN = "pending_admin"
     STATUS_ADMIN_APPROVED = "admin_approved"
     STATUS_ADMIN_REJECTED = "admin_rejected"
@@ -189,6 +197,7 @@ class StepValidationRequest(db.Model):
     ai_feedback = db.Column(db.Text, nullable=True)
     ai_confidence = db.Column(db.Integer, nullable=True)
     ai_approved_at = db.Column(db.DateTime, nullable=True)
+    poll_deadline_at = db.Column(db.DateTime, nullable=True)
     admin_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     admin_notes = db.Column(db.Text, nullable=True)
     admin_decided_at = db.Column(db.DateTime, nullable=True)
@@ -231,6 +240,7 @@ class Activity(db.Model):
     title = db.Column(db.String(160), nullable=False)
     body = db.Column(db.Text, nullable=False)
     impact = db.Column(db.Integer, nullable=False, default=1)
+    ai_generated = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     startup_id = db.Column(db.Integer, db.ForeignKey("startup.id"), nullable=True)
@@ -299,9 +309,21 @@ class AiMessage(db.Model):
     thread_id = db.Column(db.Integer, db.ForeignKey("ai_thread.id"), nullable=False, index=True)
     role = db.Column(db.String(16), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    meta_json = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     thread = db.relationship("AiThread", back_populates="messages")
+
+    @property
+    def meta(self) -> dict:
+        raw = self.meta_json
+        if not raw:
+            return {}
+        try:
+            data = json.loads(raw)
+        except (TypeError, ValueError):
+            return {}
+        return data if isinstance(data, dict) else {}
 
 
 class StepWeeklyGoal(db.Model):

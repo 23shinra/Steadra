@@ -89,7 +89,7 @@ def notify_team_invite(invitee, inviter, startup, invite_id: int) -> Notificatio
     step_line = current["label"] if current else "Ветка пройдена"
     body = (
         f"{inviter.name} зовёт в команду «{startup.name}». "
-        f"Прогресс {progress.done}/{progress.total} ({progress.percent}%). "
+        f"Прогресс {progress['done']}/{progress['total']} ({progress['percent']}%). "
         f"Сейчас: {step_line}."
     )
     return notify(

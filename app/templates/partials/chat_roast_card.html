@@ -1,22 +1,66 @@
+{% if clarify and clarify.questions and not roast_compact|default(false) %}
+<article class="roast-clarify chat-roast-card">
+  <h3>{{ clarify.plan_title or 'Уточним идею' }}</h3>
+  <p class="roast-clarify__hint">Ответь на вопросы — затем поставлю оценку по критериям</p>
+  <ol class="roast-clarify__list">
+    {% for q in clarify.questions %}
+    <li>{{ q }}</li>
+    {% endfor %}
+  </ol>
+</article>
+{% endif %}
 {% if roast %}
-<article class="roast-result chat-roast-card">
-  <div class="scoreline"><span>Idea survival</span><strong>{{ roast.score }}%</strong></div>
-  <h3>{{ roast.verdict }}</h3>
+<article
+  class="roast-result chat-roast-card{% if roast_static|default(false) %} is-static{% endif %}{% if roast_compact|default(false) %} is-compact{% endif %}"
+  {% if not roast_static|default(false) and not roast_compact|default(false) %}data-roast-card{% endif %}
+  {% if roast_compact|default(false) %}data-roast-expandable{% endif %}
+>
+  <div
+    class="scoreline{% if roast_compact|default(false) %} roast-toggle{% endif %}"
+    {% if roast_compact|default(false) %}role="button" tabindex="0" aria-expanded="false"{% endif %}
+  >
+    <span>Аудит идеи</span>
+    <div class="roast-scorebar" data-score="{{ roast.score }}" style="--score: {{ roast.score if roast_static|default(false) or roast_compact|default(false) else 0 }}">
+      <div class="roast-scorebar__track" aria-hidden="true">
+        <div class="roast-scorebar__fill"></div>
+      </div>
+      <strong class="roast-scorebar__value">{{ roast.score if roast_static|default(false) or roast_compact|default(false) else 0 }}%</strong>
+    </div>
+  </div>
+  {% if roast_compact|default(false) %}<div class="roast-details"><div class="roast-details__inner">{% endif %}
+  <h3>{{ roast.verdict|roast_verdict(roast.score) }}</h3>
+  {% if roast.criteria %}
+  <section class="roast-criteria">
+    <h4>Критерии</h4>
+    <ul class="roast-criteria__list">
+      {% for item in roast.criteria %}
+      <li class="roast-criteria__item roast-criteria__item--{{ item.score }}" style="--i: {{ loop.index0 }}">
+        <div class="roast-criteria__head">
+          <span class="roast-criteria__label">{{ item.label }}</span>
+          <strong class="roast-criteria__score">{{ item.score }}/5</strong>
+        </div>
+        {% if item.note %}<p class="roast-criteria__note">{{ item.note }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
   {% if roast.risks %}
-  <section>
+  <section class="roast-risks" style="--i: {{ (roast.criteria|length) if roast.criteria else 0 }}">
     <h4>Риски</h4>
     {% for item in roast.risks %}<p>• {{ item }}</p>{% endfor %}
   </section>
   {% endif %}
-  {% if roast.alternatives %}
-  <section class="roast-alternatives">
+  {% if roast.alternatives and not roast_compact|default(false) %}
+  <section class="roast-alternatives" style="--i: {{ ((roast.criteria|length) if roast.criteria else 0) + 1 }}">
     <h4>Альтернативы</h4>
     <p class="roast-alternatives__hint">Нажми на вариант — прожарим его</p>
     <div class="roast-alternatives__list">
       {% for item in roast.alternatives %}
-        {% if item.strip() %}
-        <button type="button" class="roast-alt-btn" data-idea="{{ item.strip() }}">
-          <span class="roast-alt-btn__text">{{ item.strip() }}</span>
+        {% set idea = item.strip() if item is string else '' %}
+        {% if idea %}
+        <button type="button" class="roast-alt-btn" data-idea="{{ idea }}">
+          <span class="roast-alt-btn__text">{{ idea }}</span>
           <span class="roast-alt-btn__go" aria-hidden="true">→</span>
         </button>
         {% endif %}
@@ -24,5 +68,6 @@
     </div>
   </section>
   {% endif %}
+  {% if roast_compact|default(false) %}</div></div>{% endif %}
 </article>
 {% endif %}

@@ -1,13 +1,21 @@
-<form class="stack" method="post" action="{{ url_for('auth.submit_login') }}" hx-post="{{ url_for('auth.submit_login') }}" hx-target="#auth-step" hx-swap="innerHTML">
+<form class="stack" method="post" action="{{ url_for('auth.submit_demo_login' if demo_mode else 'auth.submit_login') }}" hx-post="{{ url_for('auth.submit_demo_login' if demo_mode else 'auth.submit_login') }}" hx-target="#auth-step" hx-swap="innerHTML" hx-disabled-elt="find button[type=submit]" data-busy-label="Отправляем код…">
   {{ form.csrf_token }}
   <label class="field">
     <span>{{ form.phone.label.text }}</span>
-    {{ form.phone(class_="input", placeholder="77010000001", inputmode="numeric", autocomplete="tel", maxlength="11", pattern="7[0-9]{10}", data_phone_mask="kz") }}
+    {{ form.phone(class_="input", placeholder="77010000001", inputmode="numeric", autocomplete="tel", maxlength="12", data_phone_mask="kz") }}
   </label>
   {% if form.phone.errors %}
     <p class="form-error">{{ form.phone.errors[0] }}</p>
   {% endif %}
   {% if error %}<p class="form-error">{{ error }}</p>{% endif %}
-  <button class="btn btn-primary" type="submit">Получить код</button>
-  <p class="hint">Казахстанский номер: 11 цифр, например 77010000001</p>
+  <button class="btn btn-primary" type="submit">
+    <span class="btn__label">Получить код</span>
+    <span class="btn__busy htmx-indicator" aria-hidden="true">Отправляем код…</span>
+  </button>
+  <p class="hint">Казахстанский номер: 11 цифр, например 77010000001. Код придёт в WhatsApp или Telegram.</p>
+  {% if demo_mode %}
+  <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Обычный OTP-вход</a>
+  {% elif allow_demo_login|default(false) %}
+  <a class="btn btn-ghost" href="{{ url_for('auth.login_demo') }}">Demo-вход</a>
+  {% endif %}
 </form>

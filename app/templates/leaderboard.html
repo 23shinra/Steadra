@@ -1,11 +1,17 @@
 {% extends "base.html" %}
 {% from "components/_avatar.html" import user_avatar %}
+{% from "components/_role_icon.html" import role_chip %}
 {% block title %}Лидерборд · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg">
-  <header class="page-title">
-    <p class="eyebrow">Рейтинг основателей</p>
-    <h1>Лидерборд</h1>
+  <header class="page-title page-title--with-actions">
+    <div class="page-title__main">
+      <p class="eyebrow">Рейтинг основателей</p>
+      <h1>Лидерборд</h1>
+    </div>
+    {% with show_notifs=false %}
+      {% include "components/header_actions.html" %}
+    {% endwith %}
   </header>
   <div class="filter-row">
     <a href="{{ url_for('main.leaderboard') }}" class="chip {% if not filter_region %}is-active{% endif %}">Все</a>
@@ -21,6 +27,12 @@
       <strong>{{ leader.name }}</strong>
       <small>{{ leader.score }} XP</small>
     </a>
+    {% else %}
+    <article class="empty-card" style="grid-column: 1 / -1;">
+      <strong>Рейтинг пока пуст</strong>
+      <p>Закрой шаги на карте и пиши апдейты — XP появится здесь.</p>
+      <a class="btn btn-primary" href="{{ url_for('main.ai') }}">Открыть AI</a>
+    </article>
     {% endfor %}
   </div>
   {% if rest_leaders %}
@@ -31,7 +43,7 @@
       {{ user_avatar(leader, 'mini') }}
       <div class="leader-row__body">
         <strong>{{ leader.name }}</strong>
-        <small>{{ leader.role|user_role }}</small>
+        {{ role_chip(leader.role) }}
       </div>
       <div class="leader-row__score">
         <strong>{{ leader.score }}</strong>

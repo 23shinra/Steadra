@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/_avatar.html" import user_avatar %}
+{% from "components/_role_icon.html" import role_chip %}
 {% block title %}{{ startup.name }} · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg">
@@ -14,15 +15,15 @@
     <div class="startup-metrics">
       <div class="metric-block">
         <strong>{{ startup.health }}%</strong>
-        <span>Health</span>
+        <span>{{ 'metric.health'|t }}</span>
       </div>
       <div class="metric-block">
         <strong>{{ startup.traction }}</strong>
-        <span>Traction</span>
+        <span>{{ 'metric.traction'|t }}</span>
       </div>
       <div class="metric-block">
         <strong>{{ activities|length }}</strong>
-        <span>Updates</span>
+        <span>{{ 'metric.updates'|t }}</span>
       </div>
     </div>
     <div class="progress-track">
@@ -35,7 +36,7 @@
     {{ user_avatar(owner, 'mini') }}
     <div>
       <strong>{{ owner.name }}</strong>
-      <small>{{ owner.role|user_role }}</small>
+      {{ role_chip(owner.role) }}
     </div>
     {% if is_owner %}
     <span class="chip is-active">Твой проект</span>
@@ -73,11 +74,18 @@
   <form method="post" action="{{ url_for('extensions.upload_document', startup_id=startup.id) }}" enctype="multipart/form-data" class="stack">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <label class="field"><span>Data room: загрузить файл</span><input type="file" name="document" accept=".pdf,.doc,.docx,.ppt,.pptx" /></label>
-    <select name="kind" class="input"><option value="pitch">Pitch deck</option><option value="financials">Финмодель</option><option value="cap">Cap table</option></select>
+    <select name="kind" class="input"><option value="pitch">Презентация</option><option value="financials">Финмодель</option><option value="cap">Cap table</option></select>
     <button type="submit" class="btn btn-ghost">Загрузить</button>
   </form>
   {% if startup.documents %}
-  <ul>{% for d in startup.documents %}<li>{{ d.kind }}: {{ d.filename }}</li>{% endfor %}</ul>
+  <ul class="stack">
+    {% for d in startup.documents %}
+    <li>
+      {{ d.kind }}:
+      <a href="{{ url_for('extensions.download_document', startup_id=startup.id, doc_id=d.id) }}">{{ d.filename }}</a>
+    </li>
+    {% endfor %}
+  </ul>
   {% endif %}
   {% endif %}
 

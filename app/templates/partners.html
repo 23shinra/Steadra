@@ -1,11 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Партнёры · Kangaroo{% endblock %}
+{% block content %}
 <section class="screen stack-lg">
-  <header class="page-title"><h1>Партнёры KZ</h1></header>
+  <header class="page-title">
+    <a class="back-link" href="{{ url_for('main.progress_page') }}">← Путь</a>
+    <h1>Партнёры KZ</h1>
+  </header>
   {% for p in partners %}
-  <article class="card">
+  <article class="card panel-card">
     <strong>{{ p.name }}</strong>
     <span class="chip">{{ p.category }}</span>
     <p class="muted">{{ p.description }}</p>
     {% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">Сайт</a>{% endif %}
   </article>
+  {% else %}
+  <article class="empty-card">
+    <strong>Пока пусто</strong>
+    <p>Партнёры появятся по мере прохождения шагов карты.</p>
+    <a class="btn btn-primary" href="{{ url_for('main.progress_page') }}">Открыть путь</a>
+  </article>
   {% endfor %}
 </section>
+{% endblock %}

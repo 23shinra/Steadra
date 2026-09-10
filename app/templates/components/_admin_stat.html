@@ -1,29 +1,39 @@
-{% macro admin_stat(value, label, kind='default') %}
-<article class="admin-stat admin-stat--{{ kind }}">
-  <span class="admin-stat__icon" aria-hidden="true">
-    {% if kind == 'users' %}
-    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    {% elif kind == 'startups' %}
-    <svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
-    {% elif kind == 'likes' %}
-    <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
-    {% elif kind == 'comments' %}
-    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 1 1 9-8.4Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
-    {% elif kind == 'threads' %}
-    <svg viewBox="0 0 24 24"><path d="M12 3v3"/><path d="M12 18v3"/><path d="m4.9 4.9 2.1 2.1"/><path d="m17 17 2.1 2.1"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="m4.9 19.1 2.1-2.1"/><path d="m17 7 2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>
-    {% elif kind == 'activities' %}
-    <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-    {% elif kind == 'push' %}
-    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-    {% elif kind == 'notifications' %}
-    <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><circle cx="18" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
-    {% else %}
-    <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
-    {% endif %}
-  </span>
-  <div class="admin-stat__body">
-    <strong class="admin-stat__value">{{ value }}</strong>
-    <span class="admin-stat__label">{{ label }}</span>
+{% macro admin_stat(value, label, kind='default', tab=None, target=None, href=None) %}
+{% set tag = 'a' if href else ('button' if tab or target else 'article') %}
+<{{ tag }}
+  class="admin-stat admin-stat--{{ kind }}{% if href or tab or target %} is-clickable{% endif %}"
+  {% if href %}href="{{ href }}"{% endif %}
+  {% if tag == 'button' %}type="button"{% endif %}
+  {% if tab %}data-admin-tab="{{ tab }}"{% endif %}
+  {% if target %}data-admin-scroll="{{ target }}"{% endif %}
+  {% if href or tab or target %}aria-label="{{ label }}"{% endif %}
+>
+  <div class="admin-stat__inner">
+    <span class="admin-stat__icon" aria-hidden="true">
+      {% if kind == 'users' %}
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      {% elif kind == 'startups' %}
+      <svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 16 9 5 9-5"/></svg>
+      {% elif kind == 'likes' %}
+      <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+      {% elif kind == 'comments' %}
+      <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 1 1 9-8.4Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
+      {% elif kind == 'threads' %}
+      <svg viewBox="0 0 24 24"><path d="M12 3v3"/><path d="M12 18v3"/><path d="m4.9 4.9 2.1 2.1"/><path d="m17 17 2.1 2.1"/><path d="M3 12h3"/><path d="M18 12h3"/><path d="m4.9 19.1 2.1-2.1"/><path d="m17 7 2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>
+      {% elif kind == 'activities' %}
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      {% elif kind == 'push' %}
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      {% elif kind == 'notifications' %}
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><circle cx="18" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
+      {% else %}
+      <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      {% endif %}
+    </span>
+    <div class="admin-stat__body">
+      <strong class="admin-stat__value">{{ value }}</strong>
+      <span class="admin-stat__label">{{ label }}</span>
+    </div>
   </div>
-</article>
+</{{ tag }}>
 {% endmacro %}

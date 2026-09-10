@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/_notif_icon.html" import notif_icon %}
 {% block title %}Уведомления · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg">
@@ -8,32 +9,43 @@
   </header>
 
   {% if notifications %}
-  <form method="post" action="{{ url_for('main.notifications_read_all') }}">
+  <form method="post" action="{{ url_for('main.notifications_read_all') }}" class="notif-toolbar">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <button type="submit" class="btn btn-ghost full">Прочитать все</button>
+    <button type="submit" class="btn btn-ghost btn-sm">Прочитать все</button>
   </form>
   <div class="notif-list">
     {% for item in notifications %}
-    <article class="notif-item{% if not item.read_at %} is-unread{% endif %}">
+    <article class="notif-item notif-item--{{ item.kind or 'default' }}{% if not item.read_at %} is-unread{% endif %}">
+      {{ notif_icon(item.kind) }}
       <div class="notif-item__main">
-        <strong>{{ item.title }}</strong>
-        {% if item.body %}<p class="muted">{{ item.body }}</p>{% endif %}
-        <small class="muted">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
-      </div>
-      <div class="notif-item__actions">
-        <a class="btn btn-primary btn-sm" href="{{ item.href }}">Открыть</a>
-        {% if not item.read_at %}
-        <form method="post" action="{{ url_for('main.notification_read', notification_id=item.id) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <button type="submit" class="btn btn-ghost btn-sm">Прочитано</button>
-        </form>
-        {% endif %}
+        <div class="notif-item__meta">
+          <span class="notif-item__kind">{{ item.kind|notification_kind }}</span>
+          <time datetime="{{ item.created_at.isoformat() }}">{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</time>
+          {% if not item.read_at %}<span class="notif-item__dot" title="Непрочитано"></span>{% endif %}
+        </div>
+        <strong class="notif-item__title">{{ item.title }}</strong>
+        {% if item.body %}<p class="notif-item__body">{{ item.body }}</p>{% endif %}
+        <div class="notif-item__actions">
+          <a class="btn btn-primary btn-sm" href="{{ item.href }}">Открыть</a>
+          {% if not item.read_at %}
+          <form method="post" action="{{ url_for('main.notification_read', notification_id=item.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn btn-ghost btn-sm">Прочитано</button>
+          </form>
+          {% endif %}
+        </div>
       </div>
     </article>
     {% endfor %}
   </div>
   {% else %}
-  <article class="empty-card">
+  <article class="empty-card notif-empty">
+    <span class="notif-icon notif-icon--default" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      </svg>
+    </span>
     <strong>Пока пусто</strong>
     <p>Здесь появятся напоминания о шаге, дайджесты и приглашения в команду.</p>
   </article>

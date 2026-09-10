@@ -1,0 +1,30 @@
+{# Compact icon actions: search · messages · notifications #}
+{% set _show_search = show_search|default(true) %}
+{% set _show_messages = show_messages|default(true) %}
+{% set _show_notifs = show_notifs|default(true) %}
+{% set _compact = compact|default(false) %}
+<div class="header-actions{% if _compact %} header-actions--compact{% endif %}" role="group" aria-label="Быстрые действия">
+  {% if _show_search %}
+  <a class="header-action{% if active_tab == 'search' %} is-active{% endif %}"
+     href="{{ url_for('extensions.search_page') }}"
+     aria-label="{{ 'nav.search'|t }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  </a>
+  {% endif %}
+  {% if _show_messages %}
+  <a class="header-action{% if active_tab == 'messages' %} is-active{% endif %}"
+     href="{{ url_for('extensions.messages_inbox') }}"
+     aria-label="{{ 'nav.messages'|t }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16v11H4z"/><path d="m4 7 8 6 8-6"/></svg>
+    {% if unread_dm_count %}<span class="header-action__badge">{{ unread_dm_count }}</span>{% endif %}
+  </a>
+  {% endif %}
+  {% if _show_notifs and not is_investor_user %}
+  <a class="header-action{% if active_tab == 'notifications' %} is-active{% endif %}"
+     href="{{ url_for('main.notifications_page') }}"
+     aria-label="{{ 'nav.notifications'|t }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v2.1c0 .9-.3 1.8-.9 2.5L4.7 14.5A1 1 0 0 0 5.6 16H18.4a1 1 0 0 0 .9-1.5l-1.4-2.9a4.4 4.4 0 0 1-.9-2.5V7a5 5 0 0 0-5-5Z"/><path d="M10 18a2 2 0 0 0 4 0"/></svg>
+    {% if unread_notif_count %}<span class="header-action__badge">{{ unread_notif_count }}</span>{% endif %}
+  </a>
+  {% endif %}
+</div>

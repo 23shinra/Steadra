@@ -7,11 +7,10 @@
   <ul class="onboarding-checklist__list">
     {% for item in onboarding.tasks %}
     <li class="onboarding-checklist__item{% if item.done %} is-done{% endif %}">
+      {% include "components/_ui_check_box.html" %}
       {% if item.done %}
-      <span class="onboarding-checklist__check" aria-hidden="true">✓</span>
       <span>{{ item.label }}</span>
       {% else %}
-      <span class="onboarding-checklist__check" aria-hidden="true">○</span>
       <a href="{{ item.href }}">{{ item.label }}</a>
       {% endif %}
     </li>

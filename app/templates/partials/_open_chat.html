@@ -1,0 +1,9 @@
+{% if thread %}
+<form method="post" action="{{ url_for('main.ai_select_thread') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+  <button type="submit" class="{{ btn_class }}">{{ label }}</button>
+</form>
+{% else %}
+<a class="{{ btn_class }}" href="{{ url_for('main.ai') }}">{{ label }}</a>
+{% endif %}

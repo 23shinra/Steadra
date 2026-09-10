@@ -2,45 +2,95 @@
 {% block title %}Прогресс · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg progress-page">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <p class="flash flash-{{ category }}">{{ message }}</p>
-    {% endfor %}
-  {% endwith %}
   {% if roadmap_rebuilt %}
-    <p class="flash flash-success">Карта перестроена AI — теперь персональные шаги.</p>
+    <p class="flash flash-success" data-flash-toast>Карта перестроена AI — теперь персональные шаги.</p>
   {% endif %}
-  <header class="page-title progress-page__head">
-    <a class="back-link" href="{{ url_for('main.home') }}">← Главная</a>
-    <p class="eyebrow">Путь к деньгам</p>
-    {% if progress_startup %}
-    <h1>{{ progress_startup.name }}</h1>
-    <p class="muted">{{ progress_startup.tagline }}{% if progress %} · {{ progress.total }} шагов от AI{% endif %}</p>
-    <div class="progress-page__bar">
-      <div class="progress-page__fill" style="width: {{ progress.percent }}%"></div>
-    </div>
-    <p class="progress-page__meta">
-      {% if progress.finished %}
-        <strong>Ветка пройдена</strong> · 100%
-      {% else %}
-        <strong>{{ progress.done }}</strong> из <strong>{{ progress.total }}</strong> · {{ progress.percent }}%
+  <header class="page-title progress-page__head page-title--with-actions">
+    <div class="page-title__main">
+      <a class="back-link" href="{{ url_for('main.home') }}">← Главная</a>
+      <p class="eyebrow">Путь к деньгам</p>
+      {% if progress_startup %}
+      <h1>{{ progress_startup.name }}</h1>
+      {% if progress_startup.tagline %}
+      <p class="progress-page__tagline">{{ progress_startup.tagline }}</p>
       {% endif %}
-    </p>
-    {% else %}
-    <h1>Прогресс проекта</h1>
-    <p class="muted">Сначала запусти идею в чате с личным помощником.</p>
-    {% endif %}
+      <div class="progress-page__summary">
+        <div class="progress-page__summary-top">
+          <p class="progress-page__meta">
+            {% if progress.finished %}
+              <strong>Ветка пройдена</strong>
+              <span class="progress-page__sep">·</span>
+              <span>100%</span>
+            {% else %}
+              <strong>{{ progress.done }}</strong>
+              <span>из {{ progress.total }}</span>
+              <span class="progress-page__sep">·</span>
+              <span class="progress-page__pct">{{ progress.percent }}%</span>
+            {% endif %}
+          </p>
+          {% if progress %}
+          <span class="progress-page__ai">{{ progress.total }} шагов от AI</span>
+          {% endif %}
+        </div>
+        <div class="progress-page__bar" role="progressbar" aria-valuenow="{{ progress.percent }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-page__fill" style="width: {{ progress.percent }}%"></div>
+        </div>
+      </div>
+      {% else %}
+      <h1>Прогресс проекта</h1>
+      <p class="progress-page__tagline">Сначала запусти идею в чате с личным помощником.</p>
+      {% endif %}
+    </div>
+    {% with show_notifs=false, show_messages=false %}
+      {% include "components/header_actions.html" %}
+    {% endwith %}
   </header>
 
   {% if progress_startup and current_step %}
-  <article class="progress-current card">
-    <p class="eyebrow">Текущий шаг</p>
-    <h2>{{ current_step.label }}</h2>
-    <p class="muted">{{ current_step.hint }}</p>
-    {% if days_on_step is not none %}
-    <p class="progress-current__days{% if days_on_step > 3 %} is-warn{% endif %}">{{ days_on_step }} дн. на этом шаге</p>
+  <article class="progress-current card{% if days_on_step is not none and days_on_step > 3 %} is-stuck{% endif %}">
+    <div class="progress-current__hero">
+      <span class="progress-current__icon" aria-hidden="true">
+        {% if step_key == 'mvp' %}
+        <svg viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09Z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2Z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+        {% elif step_key == 'idea_poll' %}
+        <svg viewBox="0 0 24 24"><path d="M7 6.5h10M7 12h7M7 17.5h10"/><path d="M4 6.5h.01M4 12h.01M4 17.5h.01"/></svg>
+        {% elif step_key in ['pitch', 'pitch_pre'] %}
+        <svg viewBox="0 0 24 24"><path d="M3 11h3a2 2 0 0 1 2 2v7H5a2 2 0 0 1-2-2v-7Z"/><path d="M8 13V5l13-2v10L8 15"/></svg>
+        {% elif step_key == 'finmodel' %}
+        <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h4"/></svg>
+        {% elif step_key == 'users' %}
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        {% elif step_key == 'traction' %}
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-6 6"/></svg>
+        {% elif step_key == 'too' %}
+        <svg viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>
+        {% elif step_key == 'money' %}
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v10M9.5 9.5c.8-1 2-1.5 3.2-1.2 1.4.3 2.3 1.4 2.3 2.7 0 2.2-3 2.2-3 4.2 0 1.1.8 2 2.2 2.3 1.2.2 2.4-.3 3.2-1.2"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+        {% endif %}
+      </span>
+      <div class="progress-current__copy">
+        <div class="progress-current__meta">
+          <span class="progress-current__badge">Шаг {{ progress.done + 1 }} из {{ progress.total }}</span>
+          {% if days_on_step is not none %}
+          <span class="progress-current__days{% if days_on_step > 3 %} is-warn{% endif %}">{{ days_on_step }} дн.</span>
+          {% endif %}
+        </div>
+        <h2>{{ current_step.label }}</h2>
+      </div>
+    </div>
+    {% if current_step.hint %}
+    <p class="progress-current__goal">
+      <span class="progress-current__goal-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      </span>
+      <span>{{ current_step.hint }}</span>
+    </p>
     {% endif %}
     {% include "partials/step_goals.html" %}
+
+    {% include "partials/validation_questions.html" %}
 
     {% include "partials/progress_step_tools.html" %}
 
@@ -64,10 +114,6 @@
       <p class="muted">{{ last_validation.admin_notes or last_validation.ai_feedback }}</p>
     </article>
     {% endif %}
-
-    {% if not pending_validation or pending_validation.status in ['ai_rejected', 'admin_rejected'] %}
-    <p class="hint">Отчёт на проверку отправляется только в <a href="{{ url_for('main.ai', thread=thread.id) if thread else url_for('main.ai') }}">AI-чате</a> проекта — форма «Отчёт на проверку» под перепиской.</p>
-    {% endif %}
   </article>
   {% elif progress_startup and progress.finished %}
   <article class="progress-current card progress-current--done">
@@ -78,9 +124,9 @@
   </article>
   {% endif %}
 
-  {% if partners %}
   <section class="card stack">
-    <h2>Партнёры для шага</h2>
+    <h2>Партнёры KZ</h2>
+    {% if partners %}
     {% for p in partners %}
     <article>
       <strong>{{ p.name }}</strong>
@@ -88,9 +134,11 @@
       {% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">Подробнее</a>{% endif %}
     </article>
     {% endfor %}
+    {% else %}
+    <p class="muted">Акселераторы, юрфирмы и сервисы под текущий шаг — в каталоге.</p>
+    {% endif %}
     <a class="btn btn-ghost" href="{{ url_for('extensions.partners_page') }}">Все партнёры</a>
   </section>
-  {% endif %}
 
   {% if user_startups|length > 1 %}
   <div class="startup-switcher">
@@ -107,17 +155,19 @@
       <input type="hidden" name="startup_id" value="{{ progress_startup.id }}" />
       <button type="submit" class="btn btn-ghost full">Перестроить карту AI</button>
     </form>
-    <a class="btn btn-primary full" href="{% if thread %}{{ url_for('main.ai', thread=thread.id) }}{% else %}{{ url_for('main.ai') }}{% endif %}">Продолжить в чате</a>
+    {% with thread=thread, btn_class='btn btn-primary full', label='Продолжить в чате' %}
+      {% include "partials/_open_chat.html" %}
+    {% endwith %}
     <a class="btn btn-ghost full" href="{{ url_for('extensions.one_pager', startup_id=progress_startup.id) }}">One-pager для инвестора</a>
-    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_pre', startup_id=progress_startup.id) }}">Pre-MVP deck</a>
-    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_validated', startup_id=progress_startup.id) }}">Validated deck</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_pre', startup_id=progress_startup.id) }}">Pre-MVP презентация</a>
+    <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_validated', startup_id=progress_startup.id) }}">Презентация с метриками</a>
     <a class="btn btn-ghost full" href="{{ url_for('extensions.pitch_analyze', startup_id=progress_startup.id) }}">Анализ питча</a>
     <a class="btn btn-ghost full" href="{{ url_for('extensions.finmodel_page', startup_id=progress_startup.id) }}">Финмодель B2B/B2C</a>
   {% else %}
     <article class="empty-card">
       <strong>Пока нет ветки</strong>
       <p>Опиши идею, получи прожарку и нажми «Запустить путь».</p>
-      <a class="btn btn-primary full" href="{{ url_for('main.ai', onboarding=1) }}">Открыть чат</a>
+      <a class="btn btn-primary full" href="{{ url_for('main.ai') }}">Открыть чат</a>
     </article>
   {% endif %}
 </section>

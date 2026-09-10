@@ -9,7 +9,7 @@
       <p class="eyebrow">AI-чат #{{ thread.id }}</p>
       <h1>{{ thread.title }}</h1>
       <p class="muted">
-        {{ user.name }} · {{ thread.phase }}
+        {{ user.name }} · {{ thread.phase|thread_phase }}
         {% if thread.startup %} · {{ thread.startup.name }}{% endif %}
         · обновлён {{ thread.updated_at.strftime('%d.%m.%Y %H:%M') }}
       </p>
@@ -18,11 +18,11 @@
 
   <article class="card stack admin-thread-meta">
     <div class="admin-kv-grid">
-      <div><span>Фаза</span><strong>{{ thread.phase }}</strong></div>
+      <div><span>Фаза</span><strong>{{ thread.phase|thread_phase }}</strong></div>
       <div><span>Создан</span><strong>{{ thread.created_at.strftime('%d.%m.%Y %H:%M') }}</strong></div>
       <div><span>Сообщений</span><strong>{{ messages|length }}</strong></div>
       {% if thread.roast_score is not none %}
-      <div><span>Roast score</span><strong>{{ thread.roast_score }}</strong></div>
+      <div><span>Оценка прожарки</span><strong>{{ thread.roast_score }}</strong></div>
       {% endif %}
       {% if thread.idea_name %}
       <div><span>Идея</span><strong>{{ thread.idea_name }}</strong></div>

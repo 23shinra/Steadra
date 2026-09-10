@@ -1,0 +1,39 @@
+{% from "components/_achievement_icon.html" import achievement_icon %}
+<section class="profile-achievements">
+  <div class="profile-achievements__summary card">
+    <div class="profile-achievements__head">
+      <div>
+        <p class="eyebrow">{{ 'achievements.progress'|t }}</p>
+        <strong>{{ achievements.earned }} {{ 'achievements.of'|t }} {{ achievements.total }}</strong>
+      </div>
+      <span class="profile-achievements__percent">{{ achievements.percent }}%</span>
+    </div>
+    <div class="profile-achievements__bar" role="progressbar" aria-valuenow="{{ achievements.percent }}" aria-valuemin="0" aria-valuemax="100">
+      <div class="profile-achievements__fill" style="width: {{ achievements.percent }}%"></div>
+    </div>
+  </div>
+
+  <ul class="profile-achievements__grid">
+    {% for item in achievements.entries %}
+    <li class="achievement-card achievement-card--{{ item.achievement.key }}{% if item.earned %} is-earned{% else %} is-locked{% endif %}">
+      <div class="achievement-card__icon">{{ achievement_icon(item.achievement.key) }}</div>
+      <div class="achievement-card__body">
+        <strong>{{ item.title }}</strong>
+        <p>{{ item.description }}</p>
+        <div class="achievement-card__progress">
+          <div class="achievement-card__bar">
+            <div class="achievement-card__fill" style="width: {{ item.progress.percent }}%"></div>
+          </div>
+          {% if item.earned %}
+          <span class="achievement-card__status is-done">{{ 'achievements.received'|t }}</span>
+          {% elif item.progress.target > 1 %}
+          <span class="achievement-card__status">{{ item.progress.current }}/{{ item.progress.target }}</span>
+          {% else %}
+          <span class="achievement-card__status">{{ 'achievements.not_received'|t }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>

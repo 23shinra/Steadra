@@ -1,9 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Поиск · Kangaroo{% endblock %}
+{% block content %}
 <section class="screen stack-lg">
-  <header class="page-title">
-    <a class="back-link" href="{{ url_for('main.home') }}">← Главная</a>
-    <h1>Поиск</h1>
+  <header class="page-title page-title--with-actions">
+    <div class="page-title__main">
+      <a class="back-link" href="{{ url_for('main.home') }}">← Главная</a>
+      <h1>Поиск</h1>
+    </div>
+    {% with show_search=false, show_notifs=false %}
+      {% include "components/header_actions.html" %}
+    {% endwith %}
   </header>
-  <form method="get" class="searchbar">
+    <form method="get" class="searchbar" action="{{ url_for('extensions.search_page') }}">
     <input name="q" class="input" value="{{ q }}" placeholder="Идеи, фаундеры, стартапы..." />
     <select name="kind" class="input">
       <option value="all" {% if kind == 'all' %}selected{% endif %}>Все типы</option>
@@ -22,3 +30,4 @@
   </form>
   {% include "partials/search_results.html" %}
 </section>
+{% endblock %}

@@ -62,9 +62,22 @@
       </div>
     </div>
 
-    <label class="checkbox-row">
-      {{ form.onboarding_done() }}
+    <label class="checkbox-row ui-check">
+      {{ form.onboarding_done(class_="ui-check__input") }}
+      {% include "components/_ui_check_box.html" %}
       <span>{{ form.onboarding_done.label.text }}</span>
+    </label>
+
+    <label class="checkbox-row ui-check">
+      {{ form.is_verified_investor(class_="ui-check__input") }}
+      {% include "components/_ui_check_box.html" %}
+      <span>{{ form.is_verified_investor.label.text }}</span>
+    </label>
+
+    <label class="checkbox-row ui-check">
+      {{ form.is_premium(class_="ui-check__input") }}
+      {% include "components/_ui_check_box.html" %}
+      <span>{{ form.is_premium.label.text }}</span>
     </label>
 
     <button class="btn btn-primary full" type="submit">Сохранить</button>

@@ -1,0 +1,77 @@
+{# Icon + tone per notification kind #}
+{% macro notif_icon(kind) -%}
+{%- set k = (kind or '')|string -%}
+{%- if k == 'step_stuck' -%}
+  {%- set tone = 'danger' -%}
+{%- elif k in ['step_rejected', 'too_rejected'] -%}
+  {%- set tone = 'danger' -%}
+{%- elif k in ['step_approved', 'too_approved'] -%}
+  {%- set tone = 'success' -%}
+{%- elif k == 'team_invite' -%}
+  {%- set tone = 'invite' -%}
+{%- elif k in ['step_validation', 'retention', 'goal'] -%}
+  {%- set tone = 'warn' -%}
+{%- elif k == 'weekly_digest' -%}
+  {%- set tone = 'digest' -%}
+{%- else -%}
+  {%- set tone = 'default' -%}
+{%- endif -%}
+<span class="notif-icon notif-icon--{{ tone }}" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  {%- if k == 'step_stuck' %}
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+    <path d="M12 9v4"/>
+    <path d="M12 17h.01"/>
+  {%- elif k == 'weekly_digest' %}
+    <path d="M8 2v4"/>
+    <path d="M16 2v4"/>
+    <rect width="18" height="18" x="3" y="4" rx="2"/>
+    <path d="M3 10h18"/>
+    <path d="M8 14h.01"/>
+    <path d="M12 14h.01"/>
+    <path d="M16 14h.01"/>
+    <path d="M8 18h.01"/>
+    <path d="M12 18h.01"/>
+  {%- elif k == 'team_invite' %}
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  {%- elif k == 'step_validation' %}
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M12 6v6l4 2"/>
+  {%- elif k == 'step_approved' %}
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <path d="m9 11 3 3L22 4"/>
+  {%- elif k == 'step_rejected' %}
+    <circle cx="12" cy="12" r="10"/>
+    <path d="m15 9-6 6"/>
+    <path d="m9 9 6 6"/>
+  {%- elif k == 'retention' %}
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+  {%- elif k == 'goal' %}
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="12" r="6"/>
+    <circle cx="12" cy="12" r="2"/>
+  {%- elif k == 'too_approved' %}
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+    <path d="M10 6h4"/>
+    <path d="M10 10h4"/>
+    <path d="M10 14h4"/>
+    <path d="M10 18h4"/>
+  {%- elif k == 'too_rejected' %}
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/>
+    <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+    <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+    <path d="m9 9 6 6"/>
+    <path d="m15 9-6 6"/>
+  {%- else %}
+    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+  {%- endif %}
+  </svg>
+</span>
+{%- endmacro %}

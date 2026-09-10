@@ -1,11 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Сообщения · Kangaroo{% endblock %}
+{% block content %}
 <section class="screen stack-lg">
-  <header class="page-title"><h1>Сообщения</h1></header>
+  <header class="page-title page-title--with-actions">
+    <div class="page-title__main">
+      <a class="back-link" href="{% if is_investor_user %}{{ url_for('investor.candidates') }}{% else %}{{ url_for('main.profile') }}{% endif %}">← {% if is_investor_user %}Кандидаты{% else %}Профиль{% endif %}</a>
+      <h1>Сообщения</h1>
+    </div>
+    {% with show_messages=false, show_notifs=false %}
+      {% include "components/header_actions.html" %}
+    {% endwith %}
+  </header>
   {% for t in threads %}
-  <a href="{{ url_for('extensions.messages_thread', other_id=t.other.id) }}" class="card">
+  <a href="{{ url_for('extensions.messages_thread', other_id=t.other.id) }}" class="card panel-card">
     <strong>{{ t.other.name }}</strong>
     <p class="muted">{{ t.last.body[:80] }}{% if t.unread %} · {{ t.unread }} новых{% endif %}</p>
   </a>
   {% else %}
-  <p class="muted">Пока нет переписок.</p>
+  <article class="empty-card">
+    <strong>Пока нет переписок</strong>
+    <p>Напиши фаундеру из поиска или профиля — диалог появится здесь.</p>
+    <a class="btn btn-primary" href="{{ url_for('extensions.search_page') }}">Найти человека</a>
+  </article>
   {% endfor %}
 </section>
+{% endblock %}

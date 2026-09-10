@@ -1,11 +1,31 @@
 {% for thread in threads %}
-  <a
-    class="chat-thread-item {% if active_thread and thread.id == active_thread.id %}is-active{% endif %}"
-    href="{{ url_for('main.ai', thread=thread.id) }}"
-  >
-    <span class="chat-thread-item__title">{{ thread.title }}</span>
-    <span class="chat-thread-item__meta">{{ thread.updated_at.strftime("%d.%m") }}</span>
-  </a>
+  <div class="chat-thread-row{% if active_thread and thread.id == active_thread.id %} is-active{% endif %}">
+    <form method="post" action="{{ url_for('main.ai_select_thread') }}" class="chat-thread-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+      <button
+        type="submit"
+        class="chat-thread-item {% if active_thread and thread.id == active_thread.id %}is-active{% endif %}"
+      >
+        <span class="chat-thread-item__title">{{ thread.title }}</span>
+      </button>
+    </form>
+    <button
+      type="button"
+      class="chat-thread-delete"
+      aria-label="Удалить «{{ thread.title }}»"
+      title="Удалить проект"
+      data-chat-delete-open
+      data-thread-id="{{ thread.id }}"
+      data-thread-title="{{ thread.title }}"
+      data-has-startup="{{ '1' if thread.startup_id else '0' }}"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+        <path d="M10 11v6"/><path d="M14 11v6"/>
+      </svg>
+    </button>
+  </div>
 {% else %}
   <p class="chat-sidebar__empty">Пока нет диалогов</p>
 {% endfor %}

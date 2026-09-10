@@ -1,0 +1,72 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Партнёры · Admin{% endblock %}
+{% block admin_content %}
+<section class="screen stack-lg admin-page">
+  <header class="page-title admin-page__head">
+    <div>
+      <p class="eyebrow">Каталог</p>
+      <h1>Партнёры</h1>
+      <p class="muted">Список для страницы «Партнёры» и подсказок на карте прогресса.</p>
+    </div>
+  </header>
+
+  <article class="card stack">
+    <h2>Добавить</h2>
+    <form class="admin-form stack" method="post" action="{{ url_for('admin.partner_create') }}">
+      {{ form.csrf_token }}
+      <div class="admin-form__row">
+        <label class="field"><span>Название</span>{{ form.name(class_="input") }}</label>
+        <label class="field"><span>Категория</span>{{ form.category(class_="input") }}</label>
+      </div>
+      <label class="field"><span>Описание</span>{{ form.description(class_="input ui-autosize", rows="1") }}</label>
+      <div class="admin-form__row">
+        <label class="field"><span>URL</span>{{ form.url(class_="input", placeholder="https://...") }}</label>
+        <label class="field"><span>Регион</span>{{ form.region(class_="input", placeholder="astana / almaty") }}</label>
+      </div>
+      <div class="admin-form__row">
+        <label class="field"><span>Шаг карты</span>{{ form.roadmap_step_key(class_="input") }}</label>
+        <label class="field"><span>Порядок</span>{{ form.sort_order(class_="input") }}</label>
+      </div>
+      <label class="checkbox-row ui-check">
+        {{ form.active(class_="ui-check__input") }}
+        {% include "components/_ui_check_box.html" %}
+        <span>Активен</span>
+      </label>
+      <button class="btn btn-primary" type="submit">Добавить партнёра</button>
+    </form>
+  </article>
+
+  <div class="admin-validation-list">
+    {% for p in partners %}
+    <article class="admin-validation-card card">
+      <header class="admin-validation-card__head">
+        <div>
+          <strong>{{ p.name }}</strong>
+          <span class="muted">· {{ p.category }}</span>
+          {% if not p.active %}<span class="admin-tag admin-tag--warn">скрыт</span>{% endif %}
+        </div>
+        <span class="admin-tag">{{ p.roadmap_step_key or 'любой' }}</span>
+      </header>
+      <p>{{ p.description }}</p>
+      <p class="muted">
+        {% if p.url %}<a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.url }}</a>{% else %}без URL{% endif %}
+        {% if p.region %} · {{ p.region }}{% endif %}
+        · #{{ p.sort_order }}
+      </p>
+      <div class="admin-validation-card__actions">
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.partner_edit', partner_id=p.id) }}">Изменить</a>
+        <form method="post" action="{{ url_for('admin.partner_toggle', partner_id=p.id) }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="btn btn-ghost btn-sm" type="submit">{% if p.active %}Скрыть{% else %}Показать{% endif %}</button>
+        </form>
+      </div>
+    </article>
+    {% else %}
+    <article class="card admin-empty">
+      <strong>Партнёров пока нет</strong>
+      <p class="muted">Добавь первого через форму выше.</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/_too_badge.html" import too_badge %}
+{% from "components/_role_icon.html" import role_chip %}
 {% block title %}{{ startup.name }} · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg investor-page">
@@ -20,7 +21,7 @@
       <div>
         <span class="investor-summary__label">Основатель</span>
         <strong>{{ owner.name }}</strong>
-        <p class="muted">{{ owner.role|user_role }}</p>
+        <p class="muted">{{ role_chip(owner.role) }}</p>
       </div>
       <div>
         <span class="investor-summary__label">Команда</span>
@@ -90,7 +91,7 @@
   <article class="card">
     <h2>Доказательства шагов</h2>
     {% for idx, log in step_logs.items() %}
-    <p><strong>{{ log.step_label }}</strong>{% if log.evidence_url %} · <a href="{{ log.evidence_url }}" target="_blank" rel="noopener">proof</a>{% endif %}{% if log.evidence_text %} — {{ log.evidence_text[:120] }}{% endif %}</p>
+    <p><strong>{{ log.step_label }}</strong>{% if log.evidence_url %} · <a href="{{ log.evidence_url }}" target="_blank" rel="noopener">{{ 'common.proof'|t }}</a>{% endif %}{% if log.evidence_text %} — {{ log.evidence_text[:120] }}{% endif %}</p>
     {% endfor %}
   </article>
   {% endif %}
@@ -100,11 +101,14 @@
     {% include "partials/investor_deal_form.html" %}
   </article>
 
-  {% if documents %}
+  {% if documents and user.is_verified_investor %}
   <article class="card">
     <h2>Data room</h2>
     {% for doc in documents %}
-    <p>{{ doc.kind }}: {{ doc.filename }}</p>
+    <p>
+      {{ doc.kind }}:
+      <a href="{{ url_for('extensions.download_document', startup_id=startup.id, doc_id=doc.id) }}">{{ doc.filename }}</a>
+    </p>
     {% endfor %}
   </article>
   {% endif %}

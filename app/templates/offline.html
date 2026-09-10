@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#050505" />
+    <title>Офлайн · Kangaroo</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0; min-height: 100dvh; display: grid; place-items: center;
+        font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+        background: #050505; color: #f7f4e8; padding: 24px;
+      }
+      .card {
+        width: min(100%, 420px); padding: 24px; border-radius: 20px;
+        border: 1px solid rgba(255,255,255,.1); background: rgba(18,18,18,.9);
+      }
+      strong { display: block; font-size: 1.25rem; margin-bottom: 8px; }
+      p { margin: 0 0 16px; color: #9a978d; line-height: 1.45; }
+      button, a {
+        display: block; width: 100%; box-sizing: border-box; text-align: center;
+        padding: 14px 16px; border-radius: 14px; font-weight: 700; text-decoration: none;
+        border: 0; cursor: pointer; margin-top: 8px;
+      }
+      button { background: #ffc928; color: #120d02; }
+      a { background: transparent; color: #f7f4e8; border: 1px solid rgba(255,255,255,.12); }
+    </style>
+  </head>
+  <body>
+    <article class="card">
+      <strong>Нет сети</strong>
+      <p>Kangaroo сейчас офлайн. Проверь соединение и обнови страницу.</p>
+      <button type="button" onclick="location.reload()">Обновить</button>
+      <a href="/app">На главную</a>
+    </article>
+  </body>
+</html>

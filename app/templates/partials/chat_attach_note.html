@@ -1,0 +1,21 @@
+{% if attach %}
+  {% with attach=attach, filename=filename %}
+    {% include "partials/chat_file_attach.html" %}
+  {% endwith %}
+{% else %}
+<div class="chat-msg chat-msg-user">
+  <div class="chat-msg__bubble chat-msg__bubble--attach">
+    {% if kind == 'image' %}Фото{% elif kind == 'video' %}Видео{% else %}Файл{% endif %}:
+    {{ filename or 'без имени' }}
+  </div>
+</div>
+{% endif %}
+<div class="chat-msg chat-msg-ai">
+  <div class="chat-msg__bubble">
+    {% for paragraph in (message or '').split('\n\n') %}
+      {% if paragraph.strip() %}
+        <p>{{ paragraph.strip() }}</p>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

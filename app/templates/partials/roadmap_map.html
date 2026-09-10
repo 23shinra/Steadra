@@ -1,20 +1,40 @@
-<div class="roadmap-map{% if map_nodes|length >= 9 %} is-dense{% endif %}" aria-label="Карта пути к деньгам">
+<div class="roadmap-map roadmap-map--trail{% if map_nodes|length >= 9 %} is-dense{% endif %}" aria-label="Карта пути к деньгам" style="--roadmap-progress: {{ progress.percent if progress else 0 }}%;">
+  <div class="roadmap-map__glow roadmap-map__glow--a" aria-hidden="true"></div>
+  <div class="roadmap-map__glow roadmap-map__glow--b" aria-hidden="true"></div>
+
+  <header class="roadmap-map__head">
+    <div>
+      <p class="roadmap-map__kicker">Trail</p>
+      <h2 class="roadmap-map__title">Путь к деньгам</h2>
+    </div>
+    <div class="roadmap-map__meter" aria-hidden="true">
+      <span class="roadmap-map__meter-value">{{ progress.percent if progress else 0 }}%</span>
+      <span class="roadmap-map__meter-label">пройдено</span>
+    </div>
+  </header>
+
   <div class="roadmap-map__spine" aria-hidden="true">
-    <div class="roadmap-map__spine-fill" style="height: {{ progress.percent if progress else 0 }}%"></div>
+    <div class="roadmap-map__spine-track"></div>
+    <div class="roadmap-map__spine-fill"></div>
   </div>
+
   <ol class="roadmap-map__steps">
     {% for node in map_nodes %}
     <li class="roadmap-map__row is-{{ node.status }}{% if node.is_goal %} is-goal{% endif %}{% if loop.index is odd %} is-right{% else %} is-left{% endif %}">
       <div class="roadmap-map__card">
-        {% if node.is_goal %}
-        <span class="roadmap-map__icon">₸</span>
-        {% else %}
-        <span class="roadmap-map__icon">{{ loop.index }}</span>
-        {% endif %}
+        <div class="roadmap-map__meta">
+          <span class="roadmap-map__index">{% if node.is_goal %}₸{% else %}{{ '%02d'|format(loop.index) }}{% endif %}</span>
+          {% if node.status == 'done' %}
+            <span class="roadmap-map__badge">пройден</span>
+          {% elif node.status == 'active' %}
+            <span class="roadmap-map__badge is-active">ты здесь</span>
+          {% else %}
+            <span class="roadmap-map__badge is-next">впереди</span>
+          {% endif %}
+        </div>
         <div class="roadmap-map__text"{% if node.hint %} title="{{ node.hint }}"{% endif %}>
           <strong>{{ node.label }}</strong>
           {% if node.status == 'done' %}
-            <span class="roadmap-map__badge">✓</span>
             {% if node.completed_at %}
             <span class="roadmap-map__date">{{ node.completed_at }}</span>
             {% endif %}
@@ -22,14 +42,32 @@
             <span class="roadmap-map__duration">{{ node.days_taken }} дн.</span>
             {% endif %}
           {% elif node.status == 'active' %}
-            <span class="roadmap-map__badge is-active">сейчас</span>
             {% if show_step_timing and node.days_on_step is defined %}
-            <span class="roadmap-map__duration">{{ node.days_on_step }} дн.</span>
+            <span class="roadmap-map__duration">{{ node.days_on_step }} дн. на шаге</span>
             {% endif %}
+          {% endif %}
+          {% if node.micro_branches %}
+          <ul class="roadmap-map__micro">
+            {% for micro in node.micro_branches %}
+            <li class="roadmap-map__micro-item is-{{ micro.status }}">{{ micro.label }}</li>
+            {% endfor %}
+          </ul>
           {% endif %}
         </div>
       </div>
-      <span class="roadmap-map__pin" aria-hidden="true"></span>
+
+      <div class="roadmap-map__station" aria-hidden="true">
+        <span class="roadmap-map__orbit"></span>
+        <span class="roadmap-map__pin">
+          {% if node.status == 'done' %}
+          <svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7"/></svg>
+          {% elif node.is_goal %}
+          <span>₸</span>
+          {% else %}
+          <span>{{ loop.index }}</span>
+          {% endif %}
+        </span>
+      </div>
     </li>
     {% endfor %}
   </ol>

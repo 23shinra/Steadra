@@ -15,6 +15,13 @@ from .roadmap import advance_roadmap, step_at, steps_for_startup, too_step_index
 from .step_validation import save_validation_evidence
 
 
+def _progress_href(startup_id: int) -> str:
+    try:
+        return url_for("main.progress_page", startup=startup_id)
+    except RuntimeError:
+        return f"/progress?startup={startup_id}"
+
+
 def _normalize_bin(raw: str) -> str:
     return re.sub(r"\D", "", raw or "")[:12]
 
@@ -190,7 +197,7 @@ def admin_approve_too(req: TooValidationRequest, admin_id: int | None = None, no
         "too_approved",
         f"ТОО подтверждено: {req.company_name}",
         "Админ проверил документы. Статус ТОО обновлён на платформе.",
-        url_for("main.progress_page", startup=startup.id),
+        _progress_href(startup.id),
     )
     return f"ТОО «{req.company_name}» подтверждено."
 
@@ -209,6 +216,6 @@ def admin_reject_too(req: TooValidationRequest, admin_id: int | None = None, not
         "too_rejected",
         "ТОО не подтверждено",
         reason,
-        url_for("main.progress_page", startup=req.startup_id),
+        _progress_href(req.startup_id),
     )
     return "Заявка отклонена."

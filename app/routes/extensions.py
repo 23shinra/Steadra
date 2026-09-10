@@ -2,8 +2,9 @@ import json
 import os
 from pathlib import Path
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_from_directory, session, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField
 from werkzeug.utils import secure_filename
 from wtforms import SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
@@ -14,7 +15,9 @@ from ..models.entities import Activity, ActivityReaction, Startup, StartupDocume
 from ..routes.auth import session_user
 from ..services.ai_agent import (
     analyze_fin_model,
-    analyze_pitch_text,
+    analyze_pitch_deck,
+    describe_chat_image,
+    describe_chat_video,
     generate_one_pager,
     generate_pitch_outline,
     generate_pitch_pre,
@@ -42,7 +45,20 @@ class IdeaPollForm(FlaskForm):
 
 
 class PitchAnalyzeForm(FlaskForm):
-    pitch_text = TextAreaField("Текст питча", validators=[DataRequired(), Length(min=50, max=6000)])
+    pitch_file = FileField(
+        "Файл презентации",
+        validators=[Optional(), FileAllowed(["pptx", "pdf", "txt"], "Нужен .pptx, .pdf или .txt")],
+    )
+    pitch_text = TextAreaField("Или текст слайдов", validators=[Optional(), Length(max=20000)])
+
+    def validate(self, extra_validators=None):
+        ok = super().validate(extra_validators=extra_validators)
+        has_file = bool(self.pitch_file.data and getattr(self.pitch_file.data, "filename", ""))
+        has_text = bool((self.pitch_text.data or "").strip())
+        if ok and not has_file and not has_text:
+            self.pitch_file.errors += ("Загрузи .pptx/.pdf или вставь текст слайдов.",)
+            return False
+        return ok
 
 
 class FinModelForm(FlaskForm):
@@ -91,7 +107,7 @@ def search_page():
         has_too=has_too or "",
         results=results,
         show_too_filter=is_investor(user),
-        active_tab="home",
+        active_tab="search",
     )
 
 
@@ -114,7 +130,7 @@ def messages_inbox():
         "messages/inbox.html",
         user=user,
         threads=inbox(user),
-        active_tab="profile",
+        active_tab="messages" if is_investor(user) else "profile",
     )
 
 
@@ -131,7 +147,7 @@ def messages_thread(other_id: int):
         other=other,
         messages=conversation(user, other_id),
         form=MessageForm(),
-        active_tab="profile",
+        active_tab="messages" if is_investor(user) else "profile",
     )
 
 
@@ -161,7 +177,7 @@ def partners_page():
         "partners.html",
         user=user,
         partners=partners_for_step(step_key, region),
-        active_tab="home",
+        active_tab="progress",
     )
 
 
@@ -301,24 +317,43 @@ def pitch_analyze(startup_id: int):
     startup = Startup.query.filter_by(id=startup_id, owner_id=user.id).first_or_404()
     form = PitchAnalyzeForm()
     analysis = None
-    if request.method == "POST" and form.validate_on_submit():
-        if not can_use_ai(user):
-            flash("Лимит AI исчерпан.", "error")
-        else:
-            try:
-                analysis = analyze_pitch_text(user, startup, form.pitch_text.data)
-                startup.pitch_analysis_json = json.dumps(analysis, ensure_ascii=False)
-                db.session.commit()
-                consume_ai_request(user)
-                track("pitch_analyze", user, startup_id=startup_id, score=analysis.get("score"))
-            except Exception:
-                current_app.logger.exception("pitch analyze failed")
-                flash("AI временно недоступен.", "error")
-    elif startup.pitch_analysis_json:
+    if startup.pitch_analysis_json:
         try:
             analysis = json.loads(startup.pitch_analysis_json)
         except json.JSONDecodeError:
             analysis = None
+    if request.method == "POST" and form.validate_on_submit():
+        if not can_use_ai(user):
+            flash("Лимит AI исчерпан.", "error")
+        else:
+            from ..services.pitch_deck import PitchDeckError, extract_from_upload, extract_pasted_text
+
+            previous = analysis if isinstance(analysis, dict) else None
+            try:
+                upload = form.pitch_file.data
+                filename = ""
+                source = "text"
+                if upload and getattr(upload, "filename", ""):
+                    slides = extract_from_upload(upload)
+                    filename = (upload.filename or "")[:120]
+                    source = "upload"
+                else:
+                    slides = extract_pasted_text(form.pitch_text.data or "")
+                analysis = analyze_pitch_deck(
+                    user, startup, slides, previous=previous, source=source, filename=filename
+                )
+                startup.pitch_analysis_json = json.dumps(analysis, ensure_ascii=False)
+                db.session.commit()
+                consume_ai_request(user)
+                track("pitch_analyze", user, startup_id=startup_id, score=analysis.get("score"))
+                from ..services.step_validation import maybe_complete_pitch_step
+
+                maybe_complete_pitch_step(user, startup, analysis)
+            except PitchDeckError as exc:
+                flash(str(exc), "error")
+            except Exception:
+                current_app.logger.exception("pitch analyze failed")
+                flash("AI временно недоступен.", "error")
     return render_template(
         "artifacts/pitch_analyze.html",
         startup=startup,
@@ -327,6 +362,258 @@ def pitch_analyze(startup_id: int):
         user=user,
         ai_remaining=ai_remaining(user),
     )
+
+
+@bp.post("/startup/<int:startup_id>/pitch/analyze/chat")
+@bp.post("/startup/<int:startup_id>/chat/attach")
+def pitch_analyze_chat(startup_id: int):
+    user = session_user()
+    if not user:
+        abort(401)
+    startup = Startup.query.filter_by(id=startup_id, owner_id=user.id).first_or_404()
+    if not can_use_ai(user):
+        return (
+            render_template(
+                "partials/chat_pitch_analysis.html",
+                analysis=None,
+                startup=startup,
+                error="Лимит AI-запросов исчерпан.",
+            ),
+            429,
+        )
+    upload = request.files.get("attach_file") or request.files.get("pitch_file")
+    if not upload or not getattr(upload, "filename", ""):
+        return (
+            render_template(
+                "partials/chat_pitch_analysis.html",
+                analysis=None,
+                startup=startup,
+                error="Выбери документ, фото или видео.",
+            ),
+            422,
+        )
+
+    filename = (upload.filename or "")[:120]
+    ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
+    mime = (upload.mimetype or "").lower()
+
+    image_ext = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+    video_ext = {".mp4", ".mov", ".webm", ".m4v", ".avi"}
+    doc_ext = {".pptx", ".pdf", ".txt"}
+
+    if ext in video_ext or mime.startswith("video/"):
+        from ..services.video_attach import VideoAttachError, prepare_video_for_ai
+
+        try:
+            data = upload.read()
+            _, attach_meta = _save_chat_bytes(startup, data, filename=filename, kind="video")
+            packed = prepare_video_for_ai(data, filename)
+            reply = describe_chat_video(
+                user,
+                startup,
+                frames=packed.get("frames"),
+                frames_b64=packed.get("frames_b64"),
+                transcript=packed.get("transcript"),
+                duration=packed.get("duration"),
+                filename=filename,
+                has_speech=bool(packed.get("has_speech")),
+            )
+            db.session.commit()
+            consume_ai_request(user)
+            track(
+                "chat_video_attach",
+                user,
+                startup_id=startup_id,
+                frames=packed.get("frame_count"),
+                duration=packed.get("duration"),
+            )
+            _persist_chat_media(user, startup, attach=attach_meta, reply=reply)
+        except VideoAttachError as exc:
+            return (
+                render_template(
+                    "partials/chat_attach_note.html",
+                    kind="video",
+                    filename=filename,
+                    message=str(exc),
+                ),
+                422,
+            )
+        except Exception:
+            current_app.logger.exception("chat video attach failed")
+            return (
+                render_template(
+                    "partials/chat_attach_note.html",
+                    kind="video",
+                    filename=filename,
+                    message="AI временно не смог разобрать видео. Попробуй короче или пришли фото-кадры.",
+                ),
+                503,
+            )
+        return render_template(
+            "partials/chat_attach_note.html",
+            kind="video",
+            filename=filename,
+            message=reply,
+            attach=attach_meta,
+        )
+
+    if ext in image_ext or mime.startswith("image/"):
+        try:
+            data = upload.read()
+            _, attach_meta = _save_chat_bytes(startup, data, filename=filename, kind="image")
+            reply = describe_chat_image(
+                user,
+                startup,
+                data,
+                mime=mime or "image/jpeg",
+                filename=filename,
+            )
+            db.session.commit()
+            consume_ai_request(user)
+            track("chat_image_attach", user, startup_id=startup_id)
+            _persist_chat_media(user, startup, attach=attach_meta, reply=reply)
+        except ValueError as exc:
+            return (
+                render_template(
+                    "partials/chat_attach_note.html",
+                    kind="image",
+                    filename=filename,
+                    message=str(exc),
+                ),
+                422,
+            )
+        except Exception:
+            current_app.logger.exception("chat image attach failed")
+            return (
+                render_template(
+                    "partials/chat_attach_note.html",
+                    kind="image",
+                    filename=filename,
+                    message="AI временно не смог прочитать фото.",
+                ),
+                503,
+            )
+        return render_template(
+            "partials/chat_attach_note.html",
+            kind="image",
+            filename=filename,
+            message=reply,
+            attach=attach_meta,
+        )
+
+    if ext not in doc_ext:
+        return (
+            render_template(
+                "partials/chat_attach_note.html",
+                kind="file",
+                filename=filename,
+                message="Поддерживаю: фото, видео (.mp4/.mov/.webm), .pptx/.pdf/.txt.",
+            ),
+            422,
+        )
+
+    from ..services.pitch_deck import PitchDeckError, extract_from_upload
+
+    previous = None
+    if startup.pitch_analysis_json:
+        try:
+            previous = json.loads(startup.pitch_analysis_json)
+        except json.JSONDecodeError:
+            previous = None
+    try:
+        doc, attach_meta = _save_chat_document(startup, upload)
+        slides = extract_from_upload(upload)
+        analysis = analyze_pitch_deck(
+            user,
+            startup,
+            slides,
+            previous=previous if isinstance(previous, dict) else None,
+            source="upload",
+            filename=filename,
+        )
+        analysis["doc_id"] = doc.id
+        analysis["attach"] = attach_meta
+        startup.pitch_analysis_json = json.dumps(analysis, ensure_ascii=False)
+        db.session.commit()
+        consume_ai_request(user)
+        track("pitch_analyze_chat", user, startup_id=startup_id, score=analysis.get("score"))
+        from ..services.step_validation import maybe_complete_pitch_step
+
+        step_msg = maybe_complete_pitch_step(user, startup, analysis)
+        if step_msg:
+            analysis["step_completed"] = step_msg
+        _persist_chat_pitch(user, startup, filename, analysis, attach=attach_meta)
+    except (PitchDeckError, ValueError) as exc:
+        return (
+            render_template(
+                "partials/chat_pitch_analysis.html",
+                analysis=None,
+                startup=startup,
+                filename=filename,
+                error=str(exc),
+            ),
+            422,
+        )
+    except Exception:
+        current_app.logger.exception("pitch analyze chat failed")
+        return (
+            render_template(
+                "partials/chat_pitch_analysis.html",
+                analysis=None,
+                startup=startup,
+                filename=filename,
+                error="AI временно недоступен. Попробуй позже.",
+            ),
+            503,
+        )
+    return render_template(
+        "partials/chat_pitch_analysis.html",
+        analysis=analysis,
+        startup=startup,
+        filename=filename,
+        attach=attach_meta,
+    )
+
+
+def _persist_chat_pitch(user, startup, filename: str, analysis: dict, *, attach: dict | None = None) -> None:
+    """Save document + pitch card into the startup chat thread so it stays after reload."""
+    try:
+        from ..services.ai_threads import add_message, pitch_chat_intro
+
+        thread = _thread_for_startup_chat(user, startup)
+        if not thread:
+            return
+        attach_meta = attach or analysis.get("attach") or {
+            "kind": "document",
+            "filename": filename or analysis.get("filename") or "презентация",
+        }
+        add_message(
+            thread,
+            "user",
+            attach_meta.get("filename") or filename or "презентация",
+            meta={"attach": attach_meta},
+        )
+        score = int(analysis.get("score") or 0)
+        compact = {
+            "score": score,
+            "verdict": "сильный" if score >= 66 else "нормальный" if score >= 46 else "слабый",
+            "investor_ready": score >= 60,
+            "summary": (analysis.get("summary") or "")[:500],
+            "weaknesses": list(analysis.get("weaknesses") or [])[:3],
+            "filename": analysis.get("filename") or filename,
+            "delta": analysis.get("delta"),
+            "doc_id": attach_meta.get("doc_id") or analysis.get("doc_id"),
+        }
+        add_message(
+            thread,
+            "assistant",
+            pitch_chat_intro(startup, compact),
+            meta={"pitch": compact},
+        )
+        if analysis.get("step_completed"):
+            add_message(thread, "assistant", analysis["step_completed"])
+    except Exception:
+        current_app.logger.exception("persist chat pitch failed")
 
 
 @bp.route("/startup/<int:startup_id>/finmodel", methods=["GET", "POST"])
@@ -444,6 +731,111 @@ def poll_refresh(poll_id: int):
     return render_template("partials/activity_poll_block.html", feed_item=item)
 
 
+ALLOWED_DOC_EXT = {".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt"}
+ALLOWED_DOC_KIND = {"pitch", "financials", "cap"}
+
+
+def _documents_root() -> Path:
+    folder = Path(current_app.config.get("DOCUMENTS_FOLDER", "uploads/documents"))
+    if not folder.is_absolute():
+        folder = Path(current_app.root_path).parent / folder
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def _format_bytes(n: int) -> str:
+    if n < 1024:
+        return f"{n} B"
+    if n < 1024 * 1024:
+        return f"{n / 1024:.1f} KB".replace(".0 ", " ")
+    return f"{n / (1024 * 1024):.1f} MB".replace(".0 ", " ")
+
+
+def _save_chat_bytes(
+    startup: Startup,
+    data: bytes,
+    *,
+    filename: str,
+    kind: str = "pitch",
+) -> tuple[StartupDocument, dict]:
+    """Persist chat attach bytes to disk + StartupDocument; return doc and attach meta."""
+    from datetime import datetime, timezone
+
+    raw_name = (filename or "file")[:120]
+    safe = secure_filename(raw_name) or f"file{Path(raw_name).suffix.lower() or '.bin'}"
+    ext = Path(safe).suffix.lower()
+    if not data:
+        raise ValueError("Файл пустой.")
+    folder = _documents_root() / "chat" / str(startup.id)
+    folder.mkdir(parents=True, exist_ok=True)
+    stamp = int(datetime.now(timezone.utc).timestamp())
+    path = folder / f"{stamp}_{safe}"
+    path.write_bytes(data)
+    doc_kind = kind if kind in ALLOWED_DOC_KIND | {"image", "video", "chat"} else "pitch"
+    # StartupDocument.kind is free string — allow image/video
+    doc = StartupDocument(
+        startup_id=startup.id,
+        kind=doc_kind,
+        filename=safe,
+        filepath=str(path),
+    )
+    db.session.add(doc)
+    db.session.flush()
+    attach_kind = "image" if kind == "image" else "video" if kind == "video" else "document"
+    attach = {
+        "kind": attach_kind,
+        "filename": raw_name or safe,
+        "ext": ext.lstrip(".").upper(),
+        "size": len(data),
+        "size_label": _format_bytes(len(data)),
+        "doc_id": doc.id,
+        "download_url": url_for("extensions.download_document", startup_id=startup.id, doc_id=doc.id),
+    }
+    return doc, attach
+
+
+def _save_chat_document(startup: Startup, upload) -> tuple[StartupDocument, dict]:
+    raw_name = (upload.filename or "file")[:120]
+    data = upload.read()
+    try:
+        upload.stream.seek(0)
+    except Exception:
+        pass
+    return _save_chat_bytes(startup, data, filename=raw_name, kind="pitch")
+
+
+def _thread_for_startup_chat(user, startup):
+    from ..models.entities import AiThread
+    from ..services.ai_threads import resolve_thread
+
+    thread = resolve_thread(user, session.get("ai_thread_id"))
+    if not thread or (thread.startup_id and thread.startup_id != startup.id):
+        thread = (
+            AiThread.query.filter_by(user_id=user.id, startup_id=startup.id)
+            .order_by(AiThread.updated_at.desc())
+            .first()
+        )
+    return thread
+
+
+def _persist_chat_media(user, startup, *, attach: dict, reply: str) -> None:
+    try:
+        from ..services.ai_threads import add_message
+
+        thread = _thread_for_startup_chat(user, startup)
+        if not thread:
+            return
+        add_message(
+            thread,
+            "user",
+            attach.get("filename") or "файл",
+            meta={"attach": attach},
+        )
+        add_message(thread, "assistant", reply)
+    except Exception:
+        current_app.logger.exception("persist chat media failed")
+
+
 @bp.post("/startup/<int:startup_id>/documents")
 def upload_document(startup_id: int):
     user = session_user()
@@ -453,10 +845,14 @@ def upload_document(startup_id: int):
     upload = request.files.get("document")
     if not upload or not upload.filename:
         abort(422)
-    kind = request.form.get("kind", "pitch")
-    folder = Path(current_app.config.get("DOCUMENTS_FOLDER", "uploads/documents"))
-    folder.mkdir(parents=True, exist_ok=True)
     filename = secure_filename(upload.filename)
+    ext = Path(filename).suffix.lower()
+    if not filename or ext not in ALLOWED_DOC_EXT:
+        abort(422)
+    kind = request.form.get("kind", "pitch")
+    if kind not in ALLOWED_DOC_KIND:
+        kind = "pitch"
+    folder = _documents_root()
     path = folder / f"{startup_id}_{filename}"
     upload.save(path)
     doc = StartupDocument(
@@ -468,6 +864,22 @@ def upload_document(startup_id: int):
     db.session.add(doc)
     db.session.commit()
     return redirect(url_for("main.startup_detail", startup_id=startup.id))
+
+
+@bp.get("/startup/<int:startup_id>/documents/<int:doc_id>")
+def download_document(startup_id: int, doc_id: int):
+    user = session_user()
+    if not user:
+        abort(401)
+    startup = db.session.get(Startup, startup_id) or abort(404)
+    doc = StartupDocument.query.filter_by(id=doc_id, startup_id=startup.id).first_or_404()
+    is_owner = startup.owner_id == user.id
+    if not is_owner and not (is_investor(user) and user.is_verified_investor):
+        abort(403)
+    path = Path(doc.filepath)
+    from ..security import send_contained_file
+
+    return send_contained_file(_documents_root(), path, doc.filename)
 
 
 @bp.post("/investor/candidates/<int:startup_id>/deal")
@@ -517,15 +929,9 @@ def feed_react(activity_id: int, reaction: str):
 
 @bp.post("/locale")
 def set_locale():
-    user = session_user()
-    locale = request.form.get("locale", "ru")
-    if locale not in current_app.config.get("BABEL_SUPPORTED_LOCALES", ["ru"]):
-        locale = "ru"
-    session["locale"] = locale
-    if user:
-        user.locale = locale
-        db.session.commit()
-    return redirect(request.referrer or url_for("main.home"))
+    from ..routes.main import profile_set_locale
+
+    return profile_set_locale()
 
 
 @bp.post("/startup/<int:startup_id>/switch")
@@ -542,12 +948,21 @@ def switch_startup(startup_id: int):
 
 
 @bp.post("/admin/tasks/retention")
+@bp.get("/admin/tasks/retention")
 def admin_run_retention():
-    from ..routes.admin import admin_logged_in
-    from ..services.tasks import run_retention_push_campaign, run_weekly_goal_reminders
+    from flask import current_app, jsonify
 
-    if not admin_logged_in():
+    from ..routes.admin import admin_logged_in
+    from ..services.tasks import run_poll_validation_expiry, run_retention_push_campaign, run_weekly_goal_reminders
+
+    from ..security import tokens_match
+
+    token = (request.headers.get("X-Task-Token") or "").strip()
+    expected = current_app.config.get("TASK_TOKEN") or ""
+    token_ok = tokens_match(expected, token)
+    if not admin_logged_in() and not token_ok:
         abort(403)
     r1 = run_retention_push_campaign()
     r2 = run_weekly_goal_reminders()
-    return {"ok": True, "retention": r1, "goals": r2}
+    r3 = run_poll_validation_expiry()
+    return jsonify({"ok": True, "retention": r1, "goals": r2, "poll_expiry": r3})

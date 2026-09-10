@@ -20,12 +20,12 @@ ROLES = [
     {
         "id": "growth",
         "label": "Growth-лид",
-        "icon": "chart",
+        "icon": "trend",
     },
     {
         "id": "ai",
         "label": "AI-билдер",
-        "icon": "spark",
+        "icon": "bot",
     },
     {
         "id": "design",
@@ -51,8 +51,14 @@ LEGACY_ROLE_LABELS = {
 }
 
 ROLE_BY_ID = {role["id"]: role for role in ROLES}
-ROLE_BY_ID[INVESTOR_ROLE_ID] = {"id": INVESTOR_ROLE_ID, "label": INVESTOR_ROLE_LABEL, "icon": "briefcase"}
+ROLE_BY_ID[INVESTOR_ROLE_ID] = {"id": INVESTOR_ROLE_ID, "label": INVESTOR_ROLE_LABEL, "icon": "gem"}
 ROLE_LABELS = {role["label"] for role in ROLES} | {INVESTOR_ROLE_LABEL}
+
+# Legacy icon aliases kept for old templates / caches
+ICON_ALIASES = {
+    "chart": "trend",
+    "spark": "bot",
+}
 
 
 def founder_roles() -> list[dict]:
@@ -96,3 +102,15 @@ def role_label_for_id(role_id: str | None) -> str:
 
 def is_valid_role_id(role_id: str | None) -> bool:
     return bool(role_id and role_id in ROLE_BY_ID)
+
+
+def icon_for_role(role_value: str | None) -> str:
+    role = ROLE_BY_ID.get(role_id_for_user(role_value), ROLES[0])
+    icon = role.get("icon") or "rocket"
+    return ICON_ALIASES.get(icon, icon)
+
+
+def normalize_icon_name(name: str | None) -> str:
+    if not name:
+        return "rocket"
+    return ICON_ALIASES.get(name, name)

@@ -2,15 +2,30 @@ import json
 from typing import Any
 
 ROADMAP_STEPS = [
-    {"key": "idea_poll", "label": "Опросник идеи", "hint": "Опрос в ленте — ≥5 голосов и вердикт сообщества", "xp": 30},
+    {"key": "idea_poll", "label": "Опросник идеи", "hint": "Отчёт в чате → опрос в ленте в течение 24 ч → ≥3 голоса", "xp": 30},
     {"key": "pitch_pre", "label": "Преза без MVP", "hint": "Problem/solution deck до продукта — сгенерирован и сохранён", "xp": 40},
     {"key": "pitch", "label": "Питч на проверку", "hint": "Питч проанализирован AI, score ≥ 60", "xp": 50},
     {"key": "finmodel", "label": "Финмодель", "hint": "Юнит-экономика B2B или B2C с цифрами", "xp": 60},
     {"key": "mvp", "label": "Создание MVP", "hint": "Есть рабочий продукт или лендинг с заявками", "xp": 50},
     {"key": "users", "label": "Первые пользователи", "hint": "Есть реальные пользователи вне команды", "xp": 80},
-    {"key": "traction", "label": "Traction и продажи", "hint": "Есть повторяемые продажи или платящие клиенты", "xp": 120},
-    {"key": "too", "label": "Открытие ТОО", "hint": "Компания зарегистрирована в РК", "xp": 100},
-    {"key": "money", "label": "Получение денег", "hint": "Деньги на счёте от клиентов или инвесторов", "xp": 200},
+    {
+        "key": "traction",
+        "label": "Первая оплата",
+        "hint": "Реальные деньги от клиента не из близкого круга — без бартера и «обещали»",
+        "xp": 120,
+    },
+    {
+        "key": "too",
+        "label": "Открытие ТОО",
+        "hint": "ТОО зарегистрировано; есть основание работать официально (договор, счёт)",
+        "xp": 100,
+    },
+    {
+        "key": "money",
+        "label": "Повторяемый канал",
+        "hint": "≥10 оплат из одного канала без ручной подстройки под каждого клиента",
+        "xp": 200,
+    },
 ]
 
 MIN_STEPS = 8
@@ -63,19 +78,20 @@ def normalize_steps(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if len(out) < MIN_STEPS:
         return [dict(step) for step in ROADMAP_STEPS]
     last = out[-1]["label"].lower()
-    if "денег" not in last and "деньги" not in last:
+    last_key = (out[-1].get("key") or "").lower()
+    if last_key != "money" and "денег" not in last and "деньги" not in last and "канал" not in last:
         out.append(
             {
                 "key": "money",
-                "label": "Получение денег",
-                "hint": "Деньги на счёте от клиентов, гранта или инвесторов",
+                "label": "Повторяемый канал",
+                "hint": "≥10 оплат из одного канала без ручной подстройки под каждого клиента",
                 "xp": 200,
             }
         )
     else:
         out[-1]["key"] = "money"
         if not out[-1].get("hint"):
-            out[-1]["hint"] = "Деньги на счёте от клиентов, гранта или инвесторов"
+            out[-1]["hint"] = "≥10 оплат из одного канала без ручной подстройки под каждого клиента"
     return out[:MAX_STEPS]
 
 
@@ -133,6 +149,8 @@ def branch_map_state(
     steps: list[dict[str, Any]] | None = None,
     step_logs: dict[int, Any] | None = None,
     startup=None,
+    *,
+    goals_done: int = 0,
 ) -> list[dict[str, Any]]:
     items = steps or ROADMAP_STEPS
     ys = vertical_y_positions(len(items))
@@ -156,6 +174,10 @@ def branch_map_state(
             if days is not None:
                 node["days_on_step"] = days
         nodes.append(node)
+    if startup:
+        from .step_branches import attach_micro_branches_to_map
+
+        attach_micro_branches_to_map(nodes, startup, step_index, goals_done=goals_done)
     return nodes
 
 
@@ -376,6 +398,6 @@ def advance_roadmap(
     db.session.commit()
 
     if is_finished(startup.roadmap_step, steps):
-        return "Финальный шаг «Получение денег» закрыт. Ветка пройдена."
+        return "Финальный шаг «Повторяемый канал» закрыт. Ветка пройдена."
     next_step = step_at(startup.roadmap_step, steps)
     return f"Шаг «{step['label']}» закрыт. Активен: «{next_step['label']}»."

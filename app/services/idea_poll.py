@@ -46,6 +46,7 @@ def create_idea_poll(user: User, startup: Startup, hypothesis: str, title: str |
     )
     db.session.add(poll)
     db.session.commit()
+    _maybe_advance_poll_step(startup.id)
     return poll
 
 
@@ -118,7 +119,17 @@ def refresh_poll_score(poll: IdeaPoll) -> IdeaPoll:
 
     db.session.add(poll)
     db.session.commit()
+    _maybe_advance_poll_step(poll.startup_id)
     return poll
+
+
+def _maybe_advance_poll_step(startup_id: int) -> None:
+    try:
+        from .step_validation import try_advance_poll_validation
+
+        try_advance_poll_validation(startup_id)
+    except Exception:
+        pass
 
 
 def poll_bundle(poll: IdeaPoll, viewer: User | None) -> dict:

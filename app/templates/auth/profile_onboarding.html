@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/_role_icon.html" import role_icon %}
+{% from "components/_role_icon.html" import role_select %}
 {% block title %}Профиль · Kangaroo{% endblock %}
 {% block content %}
 <section class="auth-screen onboarding-profile">
@@ -11,6 +11,19 @@
 
     <form class="stack profile-form" method="post" action="{{ url_for('auth.profile_onboarding_submit') }}" id="onboarding-form">
       {{ form.csrf_token }}
+
+      {% if form.errors %}
+      <div class="form-error-banner" role="alert">
+        <strong>Не удалось сохранить профиль.</strong>
+        <ul>
+          {% for field_name, errors in form.errors.items() %}
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
 
       <div class="field">
         <span>{{ form.name.label.text }}</span>
@@ -38,25 +51,23 @@
         {{ form.region(class_="input") }}
       </div>
 
-      <div class="field investor-fields" id="investor-fields" {% if not is_investor_user %}hidden{% endif %}>
+      <div
+        class="field investor-fields"
+        id="investor-fields"
+        data-invite-check-url="{{ url_for('auth.investor_invite_check') }}"
+        {% if not is_investor_user %}hidden{% endif %}
+      >
         <span>{{ form.investor_invite_code.label.text }}</span>
-        {{ form.investor_invite_code(class_="input", placeholder="INVEST2026") }}
-        {% if form.investor_invite_code.errors %}<p class="form-error">{{ form.investor_invite_code.errors[0] }}</p>{% endif %}
+        {{ form.investor_invite_code(class_="input", placeholder="INVEST2026", id="investor_invite_code", autocomplete="off", spellcheck="false") }}
+        <p class="form-hint" id="investor-invite-hint" aria-live="polite" hidden></p>
+        {% if form.investor_invite_code.errors %}<p class="form-error" id="investor-invite-server-error">{{ form.investor_invite_code.errors[0] }}</p>{% endif %}
         {{ form.investor_fund_name(class_="input", placeholder="Фонд / компания") }}
         {{ form.investor_linkedin(class_="input", placeholder="LinkedIn URL") }}
       </div>
 
       <div class="field founder-fields" id="founder-fields" {% if is_investor_user|default(false) %}hidden{% endif %}>
         <span>Основная сфера</span>
-        <div class="role-grid role-grid-compact">
-          {% for role in roles %}
-          <label class="role-card {% if form.role.data == role.id %}is-selected{% endif %}">
-            <input type="radio" name="role" value="{{ role.id }}" {% if form.role.data == role.id %}checked{% endif %} />
-            <span class="role-card__icon">{{ role_icon(role.icon) }}</span>
-            <strong>{{ role.label }}</strong>
-          </label>
-          {% endfor %}
-        </div>
+        {{ role_select(roles, form.role.data or roles[0].id, field_name='role', select_id='onboarding-role-select') }}
         {% if form.role.errors %}<p class="form-error">{{ form.role.errors[0] }}</p>{% endif %}
       </div>
 
@@ -68,21 +79,153 @@
 
       <div class="field founder-fields" id="founder-exp-text" {% if is_investor_user|default(false) %}hidden{% endif %}>
         <span>{{ form.experience_text.label.text }}</span>
-        {{ form.experience_text(class_="textarea", rows="4", placeholder="Например: 3 года во фронтенде...") }}
+        {{ form.experience_text(class_="textarea ui-autosize", rows="1", data_min_height="48", data_max_height="240", placeholder="Если опыта нет — можно оставить пустым. Иначе: чем занимался...") }}
         {% if form.experience_text.errors %}<p class="form-error">{{ form.experience_text.errors[0] }}</p>{% endif %}
       </div>
 
-      <button class="btn btn-primary full" type="submit">Войти в Kangaroo</button>
+      <button class="btn btn-primary full" type="submit" id="onboarding-submit">
+        <span class="btn__label">Войти в Kangaroo</span>
+        <span class="btn__busy" aria-hidden="true">Сохраняем…</span>
+      </button>
     </form>
   </div>
 </section>
 {% endblock %}
 {% block page_scripts %}
 <script>
-document.getElementById('account-type-select')?.addEventListener('change', function() {
-  const isInvestor = this.value === 'investor';
-  document.querySelectorAll('.founder-fields').forEach(el => el.hidden = isInvestor);
-  document.getElementById('investor-fields').hidden = !isInvestor;
-});
+(function () {
+  const accountSelect = document.getElementById('account-type-select');
+  const investorFields = document.getElementById('investor-fields');
+  const inviteInput = document.getElementById('investor_invite_code');
+  const inviteHint = document.getElementById('investor-invite-hint');
+  const serverError = document.getElementById('investor-invite-server-error');
+  const submitBtn = document.getElementById('onboarding-submit');
+  const checkUrl = investorFields?.dataset.inviteCheckUrl || '';
+  let debounceTimer = null;
+  let lastChecked = '';
+  let inviteOk = true;
+
+  function isInvestorSelected() {
+    if (!accountSelect) return true;
+    return accountSelect.value === 'investor';
+  }
+
+  function setInvestorFieldsEnabled(enabled) {
+    if (!investorFields) return;
+    investorFields.hidden = !enabled;
+    investorFields.querySelectorAll('input, select, textarea').forEach((el) => {
+      el.disabled = !enabled;
+    });
+    if (!enabled && inviteInput) {
+      inviteInput.value = '';
+      lastChecked = '';
+      inviteOk = true;
+      setInviteHint('', '');
+      if (serverError) serverError.hidden = true;
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  }
+
+  function setInviteHint(message, state) {
+    if (!inviteHint) return;
+    inviteHint.textContent = message || '';
+    inviteHint.hidden = !message;
+    inviteHint.classList.toggle('form-error', state === 'error');
+    inviteHint.classList.toggle('form-ok', state === 'ok');
+    inviteHint.classList.toggle('form-muted', state === 'pending');
+    if (inviteInput) {
+      inviteInput.classList.toggle('is-invalid', state === 'error');
+      inviteInput.classList.toggle('is-valid', state === 'ok');
+    }
+  }
+
+  function syncAccountType() {
+    const investor = isInvestorSelected();
+    document.querySelectorAll('.founder-fields').forEach((el) => {
+      el.hidden = investor;
+    });
+    setInvestorFieldsEnabled(investor);
+    if (investor && inviteInput?.value.trim()) {
+      checkInviteCode(inviteInput.value);
+    }
+  }
+
+  async function checkInviteCode(raw) {
+    const code = (raw || '').trim();
+    if (!isInvestorSelected()) {
+      inviteOk = true;
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+    if (!code) {
+      lastChecked = '';
+      inviteOk = true;
+      setInviteHint('', '');
+      if (serverError) serverError.hidden = true;
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+    if (!checkUrl) return;
+    if (code === lastChecked) return;
+    setInviteHint('Проверяем код…', 'pending');
+    try {
+      const url = new URL(checkUrl, window.location.origin);
+      url.searchParams.set('code', code);
+      const res = await fetch(url.toString(), {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin',
+      });
+      const data = await res.json().catch(() => ({}));
+      if ((inviteInput?.value || '').trim() !== code) return;
+      lastChecked = code;
+      if (!res.ok || data.ok === false) {
+        inviteOk = false;
+        setInviteHint(data.error || 'Неверный код приглашения для инвестора.', 'error');
+        if (serverError) serverError.hidden = true;
+        if (submitBtn) submitBtn.disabled = true;
+        return;
+      }
+      inviteOk = true;
+      setInviteHint('Код подходит', 'ok');
+      if (serverError) serverError.hidden = true;
+      if (submitBtn) submitBtn.disabled = false;
+    } catch (_) {
+      if ((inviteInput?.value || '').trim() !== code) return;
+      inviteOk = false;
+      setInviteHint('Не удалось проверить код. Попробуй ещё раз.', 'error');
+      if (submitBtn) submitBtn.disabled = true;
+    }
+  }
+
+  accountSelect?.addEventListener('change', syncAccountType);
+
+  inviteInput?.addEventListener('input', () => {
+    if (serverError) serverError.hidden = true;
+    const code = inviteInput.value.trim();
+    if (!code) {
+      clearTimeout(debounceTimer);
+      checkInviteCode('');
+      return;
+    }
+    setInviteHint('Проверяем код…', 'pending');
+    if (submitBtn) submitBtn.disabled = true;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => checkInviteCode(inviteInput.value), 350);
+  });
+
+  inviteInput?.addEventListener('blur', () => {
+    clearTimeout(debounceTimer);
+    if (isInvestorSelected()) checkInviteCode(inviteInput.value);
+  });
+
+  document.getElementById('onboarding-form')?.addEventListener('submit', (event) => {
+    if (isInvestorSelected() && !inviteOk && inviteInput?.value.trim()) {
+      event.preventDefault();
+      setInviteHint('Неверный код приглашения для инвестора.', 'error');
+    }
+  });
+
+  syncAccountType();
+})();
 </script>
 {% endblock %}

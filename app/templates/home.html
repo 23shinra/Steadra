@@ -1,47 +1,142 @@
 {% extends "base.html" %}
 {% from "components/_avatar.html" import user_avatar %}
-{% from "components/_startup_card.html" import startup_card %}
 {% block title %}Главная · Kangaroo{% endblock %}
 {% block content %}
-<section class="screen stack-lg">
-  <header class="app-header app-header--with-bell">
-    {{ user_avatar(user) }}
+<section class="screen home-hub">
+  <header class="app-header app-header--with-actions">
+    <a class="home-hub__avatar" href="{{ url_for('main.profile') }}" aria-label="Профиль">
+      {{ user_avatar(user) }}
+    </a>
     <div class="home-greeting">
-      <p class="home-greeting__hi">Привет,</p>
       <p class="home-greeting__name">{{ user.name }}</p>
     </div>
-    {% if not is_investor_user %}
-    <a class="notif-bell" href="{{ url_for('main.notifications_page') }}" aria-label="Уведомления">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 0 0-5 5v2.1c0 .9-.3 1.8-.9 2.5L4.7 14.5A1 1 0 0 0 5.6 16H18.4a1 1 0 0 0 .9-1.5l-1.4-2.9a4.4 4.4 0 0 1-.9-2.5V7a5 5 0 0 0-5-5Z"/><path d="M10 18a2 2 0 0 0 4 0"/></svg>
-      {% if unread_notif_count %}<span class="notif-bell__badge">{{ unread_notif_count }}</span>{% endif %}
-    </a>
-    {% endif %}
+    {% include "components/header_actions.html" %}
   </header>
 
-  {% include "partials/onboarding_checklist.html" %}
-  {% include "partials/mission_card.html" %}
-
-  {% if vapid_public_key %}
-  <article class="push-banner card" id="push-optin" hidden>
-    <strong>Напоминать о шаге?</strong>
-    <p class="muted">Push поможет не застрять на карте между визитами.</p>
-    <div class="push-banner__actions">
-      <button type="button" class="btn btn-primary" id="push-enable-btn">Включить</button>
-      <button type="button" class="btn btn-ghost" id="push-dismiss-btn">Не сейчас</button>
+  {% if onboarding and onboarding.done_count < onboarding.total %}
+  <article class="home-start card">
+    <div class="home-start__head">
+      <div>
+        <p class="eyebrow">Старт</p>
+        <strong>{{ onboarding.done_count }}/{{ onboarding.total }} готово</strong>
+      </div>
+    </div>
+    <div class="home-start__list">
+      {% for item in onboarding.tasks if not item.done %}
+      <a class="home-start__item" href="{{ item.href }}">{{ item.label }}</a>
+      {% endfor %}
     </div>
   </article>
   {% endif %}
 
-  <form class="searchbar" method="get" action="{{ url_for('extensions.search_page') }}" hx-get="{{ url_for('extensions.search_partial') }}" hx-trigger="keyup changed delay:300ms" hx-target="#search-results" hx-include="[name='q']">
-    <span>⌕</span>
-    <input name="q" placeholder="Идеи, фаундеры, апдейты..." value="{{ request.args.get('q', '') }}" />
-    <a href="{{ url_for('main.feed') }}">Фильтр</a>
-  </form>
-  <div id="search-results"></div>
+  {% if mission %}
+  <article class="home-focus card{% if mission.days_on_step and mission.days_on_step > 3 and not mission.finished %} is-stuck{% endif %}">
+    {% if mission.startup and not mission.finished %}
+    <div class="home-focus__main">
+      <p class="eyebrow">Сейчас</p>
+      <h1 class="home-focus__title">{{ mission.current_step.label }}</h1>
+      {% if mission.startup.name %}
+      <p class="home-focus__project">{{ mission.startup.name }}</p>
+      {% endif %}
+      {% if mission.progress %}
+      <div class="home-focus__progress">
+        <div class="home-focus__bar" role="progressbar" aria-valuenow="{{ mission.progress.percent }}" aria-valuemin="0" aria-valuemax="100">
+          <div class="home-focus__fill" style="width: {{ mission.progress.percent }}%"></div>
+        </div>
+        <div class="home-focus__stats" aria-label="Прогресс">
+          <div class="home-focus__stat">
+            <span class="home-focus__stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </span>
+            <span class="home-focus__stat-copy">
+              <strong>{{ mission.progress.done }}/{{ mission.progress.total }}</strong>
+              <span>шагов</span>
+            </span>
+          </div>
+          <div class="home-focus__stat">
+            <span class="home-focus__stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+            </span>
+            <span class="home-focus__stat-copy">
+              <strong>{{ mission.progress.percent }}%</strong>
+              <span>пройдено</span>
+            </span>
+          </div>
+          {% if mission.days_on_step is not none %}
+          <div class="home-focus__stat{% if mission.days_on_step > 3 %} is-warn{% endif %}">
+            <span class="home-focus__stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            </span>
+            <span class="home-focus__stat-copy">
+              <strong>{{ mission.days_on_step }}</strong>
+              <span>дн. на шаге</span>
+            </span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="home-focus__aside">
+      <a class="btn btn-primary home-focus__cta" href="{{ mission.cta_url }}">{{ mission.cta_label }}</a>
+    </div>
+    {% elif mission.startup and mission.finished %}
+    <div class="home-focus__main">
+      <p class="eyebrow">Финиш</p>
+      <h1 class="home-focus__title">Путь пройден</h1>
+      <p class="muted">{{ mission.startup.name }} — можно делиться результатом.</p>
+    </div>
+    <div class="home-focus__aside">
+      <a class="btn btn-primary home-focus__cta" href="{{ mission.feed_url }}">Написать в ленту</a>
+    </div>
+    {% else %}
+    <div class="home-focus__main">
+      <p class="eyebrow">Начни</p>
+      <h1 class="home-focus__title">Запусти идею</h1>
+      <p class="muted">AI соберёт карту до денег.</p>
+    </div>
+    <div class="home-focus__aside">
+      <a class="btn btn-primary home-focus__cta" href="{{ mission.cta_url }}">{{ mission.cta_label }}</a>
+    </div>
+    {% endif %}
+  </article>
+  {% endif %}
+
+  <nav class="home-jumps" aria-label="Разделы">
+    <a class="home-jump" href="{{ url_for('main.ai') }}">
+      <span class="home-jump__icon home-jump__icon--ai" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="m15.238 10.81l-.569 1.694a4.33 4.33 0 0 1-2.757 2.76l-1.713.569a.288.288 0 0 0 0 .548l1.713.569a4.32 4.32 0 0 1 2.736 2.738l.568 1.715a.287.287 0 0 0 .548 0l.59-1.694a4.32 4.32 0 0 1 2.735-2.738l1.714-.569a.288.288 0 0 0 0-.548l-1.692-.59a4.32 4.32 0 0 1-2.757-2.76l-.569-1.715a.29.29 0 0 0-.448-.126a.3.3 0 0 0-.099.148m-8.43-4.914l-.413 1.231a3.15 3.15 0 0 1-2.006 2.007l-1.246.414a.21.21 0 0 0 0 .398l1.246.415a3.14 3.14 0 0 1 1.99 1.99l.413 1.248a.21.21 0 0 0 .398 0l.43-1.232a3.15 3.15 0 0 1 1.99-1.99l1.245-.415a.21.21 0 0 0 0-.398l-1.23-.43A3.14 3.14 0 0 1 7.62 7.128l-.414-1.247a.21.21 0 0 0-.398.016"/></svg>
+      </span>
+      <span>AI</span>
+    </a>
+    <a class="home-jump" href="{{ url_for('main.progress_page') }}">
+      <span class="home-jump__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20V8"/></svg>
+      </span>
+      <span>Путь</span>
+    </a>
+    <a class="home-jump" href="{{ url_for('extensions.search_page') }}">
+      <span class="home-jump__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </span>
+      <span>Поиск</span>
+    </a>
+    <a class="home-jump" href="{{ url_for('extensions.partners_page') }}">
+      <span class="home-jump__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M3.5 19a4.5 4.5 0 0 1 9 0"/><path d="M11.5 19a4.5 4.5 0 0 1 9 0"/></svg>
+      </span>
+      <span>Партнёры</span>
+    </a>
+    <a class="home-jump" href="{{ url_for('main.leaderboard') }}">
+      <span class="home-jump__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M4 19h16"/></svg>
+      </span>
+      <span>Топ</span>
+    </a>
+  </nav>
 
   {% if user_startups|length > 1 %}
-  <div class="startup-switcher">
-    <span class="muted">Проект:</span>
+  <div class="startup-switcher home-hub__switcher">
     {% for s in user_startups %}
     <form method="post" action="{{ url_for('extensions.switch_startup', startup_id=s.id) }}" class="inline-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -51,56 +146,43 @@
   </div>
   {% endif %}
 
-  <div class="quick-grid">
-    <a class="quick is-hot" href="{{ url_for('main.ai') }}">
-      <span class="quick-icon quick-icon-ai" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="m15.238 10.81l-.569 1.694a4.33 4.33 0 0 1-2.757 2.76l-1.713.569a.288.288 0 0 0 0 .548l1.713.569a4.32 4.32 0 0 1 2.736 2.738l.568 1.715a.287.287 0 0 0 .548 0l.59-1.694a4.32 4.32 0 0 1 2.735-2.738l1.714-.569a.288.288 0 0 0 0-.548l-1.692-.59a4.32 4.32 0 0 1-2.757-2.76l-.569-1.715a.29.29 0 0 0-.448-.126a.3.3 0 0 0-.099.148m-8.43-4.914l-.413 1.231a3.15 3.15 0 0 1-2.006 2.007l-1.246.414a.21.21 0 0 0 0 .398l1.246.415a3.14 3.14 0 0 1 1.99 1.99l.413 1.248a.21.21 0 0 0 .398 0l.43-1.232a3.15 3.15 0 0 1 1.99-1.99l1.245-.415a.21.21 0 0 0 0-.398l-1.23-.43A3.14 3.14 0 0 1 7.62 7.128l-.414-1.247a.21.21 0 0 0-.398.016m7.849-3.422l-.207.616a1.57 1.57 0 0 1-1.002 1.004l-.623.207a.104.104 0 0 0-.052.16a.1.1 0 0 0 .052.039l.623.207a1.57 1.57 0 0 1 .995.995l.206.624a.105.105 0 0 0 .2 0l.214-.616a1.57 1.57 0 0 1 .995-.995l.623-.207a.105.105 0 0 0 0-.2l-.615-.214a1.57 1.57 0 0 1-1.003-1.004l-.207-.624a.105.105 0 0 0-.199.008"/></svg>
-      </span>
-      <strong>Личный помощник</strong>
-      <small>Проверить идею</small>
-    </a>
-    <a class="quick" href="{{ url_for('main.feed') }}">
-      <span class="quick-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M7 6.5h10M7 12h7M7 17.5h10"/><path d="M4 6.5h.01M4 12h.01M4 17.5h.01"/></svg>
-      </span>
-      <strong>Лента</strong>
-      <small>Апдейты команд</small>
-    </a>
-    <a class="quick" href="{{ url_for('main.leaderboard') }}">
-      <span class="quick-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M5 19V9"/><path d="M12 19V5"/><path d="M19 19v-7"/><path d="M4 19h16"/></svg>
-      </span>
-      <strong>Рейтинг</strong>
-      <small>Очки роста</small>
-    </a>
-    <a class="quick" href="{{ url_for('main.profile') }}">
-      <span class="quick-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>
-      </span>
-      <strong>Профиль</strong>
-      <small>Твой прогресс</small>
-    </a>
-  </div>
-
-  {% if active_startup %}
-  <div class="section-head">
-    <h2>Твой проект</h2>
-    <a href="{{ url_for('main.progress_page', startup=active_startup.id) }}">Карта</a>
-  </div>
-  {{ startup_card(active_startup) }}
+  {% if vapid_public_key %}
+  <article class="push-banner card" id="push-optin" hidden>
+    <strong>Напоминать о шаге?</strong>
+    <p class="muted">Push поможет не застрять между визитами.</p>
+    <div class="push-banner__actions">
+      <button type="button" class="btn btn-primary" id="push-enable-btn">Включить</button>
+      <button type="button" class="btn btn-ghost" id="push-dismiss-btn">Не сейчас</button>
+    </div>
+  </article>
   {% endif %}
 
-  <div class="section-head">
-    <h2>Лента роста</h2>
-    <a href="{{ url_for('main.feed') }}">Все</a>
-  </div>
-  <div class="feed-list compact">
-    {% for feed_item in feed_items[:3] %}
-      {% with show_social=false %}
-        {% include "partials/activity_card.html" %}
-      {% endwith %}
-    {% endfor %}
-  </div>
+  <article class="push-banner card" id="pwa-install" hidden>
+    <strong>Установить Kangaroo</strong>
+    <p class="muted">Ярлык на телефоне — быстрее открывать путь и чат.</p>
+    <div class="push-banner__actions">
+      <button type="button" class="btn btn-primary" id="pwa-install-btn">Установить</button>
+      <button type="button" class="btn btn-ghost" id="pwa-install-dismiss">Не сейчас</button>
+    </div>
+  </article>
+
+  {% if feed_items %}
+  <section class="home-feed">
+    <div class="section-head">
+      <h2>Свежее</h2>
+      <a href="{{ url_for('main.feed') }}">Лента</a>
+    </div>
+    <div class="home-feed__list">
+      {% for feed_item in feed_items[:2] %}
+      {% set activity = feed_item.activity %}
+      <a class="home-feed__item" href="{{ url_for('main.feed') }}">
+        <strong>{{ activity.title }}</strong>
+        <span>{{ activity.user.name }}{% if activity.startup %} · {{ activity.startup.name }}{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </section>
 {% endblock %}
 
@@ -125,16 +207,16 @@
   if (Notification.permission === "granted" || asked === "1") return;
   if (visits < 2) return;
   banner.hidden = false;
-  document.getElementById("push-dismiss-btn")?.addEventListener("click", () => {
-    localStorage.setItem("kangaroo_push_asked", "1");
-    banner.hidden = true;
-  });
   document.getElementById("push-enable-btn")?.addEventListener("click", async () => {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
     const perm = await Notification.requestPermission();
     if (perm !== "granted") {
-      localStorage.setItem("kangaroo_push_asked", "1");
-      banner.hidden = true;
+      if (window.kangarooDismissBanner) {
+        window.kangarooDismissBanner(banner, "kangaroo_push_asked");
+      } else {
+        localStorage.setItem("kangaroo_push_asked", "1");
+        banner.hidden = true;
+      }
       return;
     }
     const reg = await navigator.serviceWorker.ready;
@@ -148,8 +230,12 @@
       headers: { "Content-Type": "application/json", "X-CSRFToken": csrf || "" },
       body: JSON.stringify(sub.toJSON()),
     });
-    localStorage.setItem("kangaroo_push_asked", "1");
-    banner.hidden = true;
+    if (window.kangarooDismissBanner) {
+      window.kangarooDismissBanner(banner, "kangaroo_push_asked");
+    } else {
+      localStorage.setItem("kangaroo_push_asked", "1");
+      banner.hidden = true;
+    }
   });
 })();
 </script>

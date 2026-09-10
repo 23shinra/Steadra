@@ -1,46 +1,96 @@
 {% if show_step_submit and progress_startup and active_thread and current_step %}
-<article class="chat-too-card" id="chat-step-card">
-  <div class="chat-too-card__head">
-    <strong>Отчёт на проверку · {{ current_step.label }}</strong>
-    <p class="muted">Опиши результат шага и приложи доказательства — сначала проверит AI, затем админ.</p>
+{% set needs_attention = (last_validation and last_validation.status in ['ai_rejected', 'admin_rejected']) or submit_error %}
+<div class="chat-step-rail{% if needs_attention %} is-alert{% endif %}" id="chat-step-card" data-step-card>
+  <button
+    type="button"
+    class="chat-step-tab"
+    data-step-card-toggle
+    aria-expanded="false"
+    aria-controls="chat-step-card-body"
+    title="{{ current_step.label }}"
+    aria-label="Отчёт: {{ current_step.label }}"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 7h8M8 12h8M8 17h5"/>
+      <rect x="4" y="3" width="16" height="18" rx="3"/>
+    </svg>
+  </button>
+
+  <div class="chat-step-drawer" id="chat-step-card-body" data-step-card-body role="dialog" aria-label="Отчёт по шагу" hidden>
+    <div class="chat-step-drawer__head">
+      <strong>{{ current_step.label }}</strong>
+      <button type="button" class="chat-step-drawer__close" data-step-card-toggle aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    {% if submit_error %}
+    <p class="flash flash-error chat-step-drawer__flash">{{ submit_error }}</p>
+    {% endif %}
+
+    {% if pending_validation and pending_validation.status == 'pending_admin' %}
+    <p class="flash flash-success chat-step-drawer__flash">AI одобрил ({{ pending_validation.ai_confidence }}%). Ждём админа.</p>
+    <input type="hidden" name="report" value="{{ pending_validation.report }}" />
+    {% include "partials/chat_feed_autopost.html" %}
+    {% elif pending_validation and pending_validation.status == 'pending_poll' %}
+    <p class="flash flash-success chat-step-drawer__flash">Отчёт принят. Нужен опрос в ленте.</p>
+    <a class="chat-step-drawer__link" href="{{ url_for('main.progress_page', startup=progress_startup.id) }}">Открыть карту →</a>
+    {% elif pending_validation and pending_validation.status == 'pending_ai' %}
+    <p class="flash flash-info chat-step-drawer__flash">На проверке у AI…</p>
+    {% else %}
+    {% if last_validation and last_validation.status == 'ai_rejected' %}
+    <p class="chat-step-drawer__feedback">{{ last_validation.ai_feedback }}</p>
+    {% elif last_validation and last_validation.status == 'admin_rejected' %}
+    <p class="chat-step-drawer__feedback">{{ last_validation.admin_notes or last_validation.ai_feedback or '' }}</p>
+    {% endif %}
+
+    {% if validation_milestone and validation_milestone.killers %}
+    <details class="chat-step-killers">
+      <summary>Что проверить · {{ validation_milestone.killers|length }}</summary>
+      {% if validation_milestone.criterion %}
+      <p class="chat-step-killers__criterion">{{ validation_milestone.criterion }}</p>
+      {% endif %}
+      <ol class="chat-step-killers__list">
+        {% for qid, text in validation_milestone.killers %}
+        <li>{{ text }}</li>
+        {% endfor %}
+      </ol>
+    </details>
+    {% endif %}
+
+    <form class="chat-step-form"
+      method="post"
+      action="{{ url_for('main.step_submit', startup_id=progress_startup.id) }}"
+      enctype="multipart/form-data"
+      hx-post="{{ url_for('main.step_submit', startup_id=progress_startup.id) }}"
+      hx-encoding="multipart/form-data"
+      hx-target="#chat-step-card"
+      hx-swap="outerHTML"
+      hx-disabled-elt="find button[type=submit]"
+      data-busy-label="Проверяем…">
+      {{ complete_form.csrf_token }}
+      <input type="hidden" name="thread_id" value="{{ active_thread.id }}" />
+      <label class="field chat-step-form__field" aria-label="Отчёт">
+        {{ complete_form.report(class_="input ui-autosize chat-step-form__input", rows="1", data_min_height="40", data_max_height="120", placeholder="Что сделал и результат…") }}
+      </label>
+      <label class="field chat-step-form__field" aria-label="Ссылка-доказательство">
+        {{ complete_form.evidence_url(class_="input chat-step-form__evidence", placeholder="Ссылка-доказательство (необяз.)") }}
+      </label>
+      <label class="field chat-step-form__file">
+        <span class="chat-step-form__file-label">Файл (PDF, скрин)</span>
+        <input class="input" type="file" name="evidence_file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" />
+      </label>
+      <button type="submit" class="chat-step-form__submit" aria-label="На проверку" title="На проверку">
+        <svg class="btn__label" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 4h6a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+          <path d="M9 4V3.5A1.5 1.5 0 0 1 10.5 2h3A1.5 1.5 0 0 1 15 3.5V4"/>
+          <path d="m9.2 13.2 2.1 2.1 4-4.2"/>
+        </svg>
+        <span class="btn__busy htmx-indicator" aria-hidden="true">…</span>
+      </button>
+    </form>
+    {% include "partials/chat_feed_autopost.html" %}
+    {% endif %}
   </div>
-  {% if submit_error %}
-  <p class="flash flash-error">{{ submit_error }}</p>
-  {% endif %}
-  {% if pending_validation and pending_validation.status == 'pending_admin' %}
-  <p class="flash flash-success">AI одобрил отчёт ({{ pending_validation.ai_confidence }}%). Ждём подтверждения админа.</p>
-  {% elif pending_validation and pending_validation.status == 'pending_ai' %}
-  <p class="flash flash-info">Отчёт на AI-проверке…</p>
-  {% elif last_validation and last_validation.status == 'ai_rejected' %}
-  <p class="flash flash-error">AI не принял прошлый отчёт</p>
-  <p class="muted">{{ last_validation.ai_feedback }}</p>
-  {% elif last_validation and last_validation.status == 'admin_rejected' %}
-  <p class="flash flash-error">Админ вернул на доработку</p>
-  <p class="muted">{{ last_validation.admin_notes or last_validation.ai_feedback }}</p>
-  {% else %}
-  <form class="stack chat-too-form"
-    method="post"
-    enctype="multipart/form-data"
-    action="{{ url_for('main.step_submit', startup_id=progress_startup.id) }}"
-    hx-post="{{ url_for('main.step_submit', startup_id=progress_startup.id) }}"
-    hx-target="#chat-step-card"
-    hx-swap="outerHTML">
-    {{ complete_form.csrf_token }}
-    <input type="hidden" name="thread_id" value="{{ active_thread.id }}" />
-    <label class="field">
-      <span>Что сделал</span>
-      {{ complete_form.report(class_="input", rows="3", placeholder="Краткий отчёт: что сделано и какой результат (20–500 символов)") }}
-    </label>
-    <label class="field">
-      <span>Ссылка-доказательство</span>
-      {{ complete_form.evidence_url(class_="input", placeholder="https://...") }}
-    </label>
-    <label class="field">
-      <span>Вложение (скрин, PDF)</span>
-      <input class="input" type="file" name="evidence_file" accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.ppt,.pptx" />
-    </label>
-    <button type="submit" class="btn btn-primary full">Отправить на проверку</button>
-  </form>
-  {% endif %}
-</article>
+</div>
 {% endif %}

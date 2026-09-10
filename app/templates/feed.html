@@ -2,9 +2,14 @@
 {% block title %}Лента · Kangaroo{% endblock %}
 {% block content %}
 <section class="screen stack-lg">
-  <header class="page-title">
-    <p class="eyebrow">Community pulse</p>
-    <h1>Что сделали фаундеры</h1>
+  <header class="page-title page-title--with-actions">
+    <div class="page-title__main">
+      <p class="eyebrow">Лента фаундеров</p>
+      <h1>Что сделали фаундеры</h1>
+    </div>
+    {% with show_notifs=false %}
+      {% include "components/header_actions.html" %}
+    {% endwith %}
   </header>
 
   <div class="feed-compose-wrap" data-feed-compose>
@@ -21,6 +26,8 @@
         hx-post="{{ url_for('main.feed_post') }}"
         hx-target="#feed-list"
         hx-swap="afterbegin"
+        hx-disabled-elt="find button[type=submit]"
+        data-busy-label="Публикуем…"
       >
         {{ post_form.csrf_token }}
         <div class="feed-compose__head">
@@ -31,12 +38,15 @@
           {{ post_form.title(class_="input", placeholder="Заголовок (необязательно)") }}
         </label>
         <label class="field">
-          {{ post_form.body(class_="input feed-compose__body", rows="3", placeholder="Что сделал, что спросить, что запустил...") }}
+          {{ post_form.body(class_="input ui-autosize feed-compose__body", rows="1", placeholder="Что сделал, что спросить, что запустил...") }}
         </label>
         <label class="field">
           {{ post_form.kind(class_="input") }}
         </label>
-        <button class="btn btn-primary" type="submit">Опубликовать</button>
+        <button class="btn btn-primary" type="submit">
+          <span class="btn__label">Опубликовать</span>
+          <span class="btn__busy htmx-indicator" aria-hidden="true">Публикуем…</span>
+        </button>
       </form>
     </div>
   </div>
@@ -49,10 +59,17 @@
     <a href="{{ url_for('main.feed', kind='ship') }}" class="chip {% if filter_kind == 'ship' %}is-active{% endif %}">Запуски</a>
     <a href="{{ url_for('main.feed', kind='sale') }}" class="chip {% if filter_kind == 'sale' %}is-active{% endif %}">Продажи</a>
     <a href="{{ url_for('main.feed', kind='roast') }}" class="chip {% if filter_kind == 'roast' %}is-active{% endif %}">Разбор AI</a>
+    <a href="{{ url_for('main.feed', kind='team') }}" class="chip {% if filter_kind == 'team' %}is-active{% endif %}">Команда</a>
   </div>
   <div class="feed-list" id="feed-list">
     {% for feed_item in feed_items %}
       {% include "partials/activity_card.html" %}
+    {% else %}
+    <article class="empty-card">
+      <strong>Лента пока пустая</strong>
+      <p>Напиши первый пост — это поможет найти команду и получить обратную связь.</p>
+      <button type="button" class="btn btn-primary" data-feed-compose-open>Сделать пост</button>
+    </article>
     {% endfor %}
   </div>
 </section>
@@ -90,6 +107,12 @@
       event.stopPropagation();
       setOpen(false);
     }
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!event.target.closest("[data-feed-compose-open]")) return;
+    if (wrap.contains(event.target)) return;
+    setOpen(true);
   });
 
   if (new URLSearchParams(window.location.search).get("compose") === "1") {

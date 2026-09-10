@@ -3,64 +3,143 @@
 {% from "components/_startup_card.html" import startup_card %}
 {% block title %}{{ user.name }} · Kangaroo{% endblock %}
 {% block content %}
-<section class="screen profile-page">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <p class="flash flash-{{ category }}">{{ message }}</p>
-    {% endfor %}
-  {% endwith %}
-
-  {% if not is_own_profile %}
+{% set profile_tab_url = url_for('main.profile') if is_own_profile else url_for('main.user_profile', user_id=user.id) %}
+{% set projects_count = my_startups|length %}
+{% set streak_n = user.streak or 0 %}
+<section class="screen profile-page profile-page--ig">
+  {% if is_own_profile %}
+  <header class="ig-topbar">
+    <strong class="ig-topbar__user">{{ user.name }}</strong>
+    <div class="ig-topbar__actions">
+      {% with compact=true, show_notifs=false %}
+        {% include "components/header_actions.html" %}
+      {% endwith %}
+      <a class="ig-topbar__btn{% if profile_tab == 'settings' %} is-active{% endif %}"
+         href="{{ profile_tab_url }}?tab=settings"
+         aria-label="{{ 'profile.tab.settings'|t }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+        </svg>
+      </a>
+    </div>
+  </header>
+  {% else %}
   <a class="back-link" href="{{ url_for('main.leaderboard') }}">← Лидерборд</a>
   {% endif %}
 
-  <header class="profile-hero">
-    {% if is_own_profile %}
-    <a class="icon-btn profile-edit-btn" href="{{ url_for('main.profile_edit') }}" aria-label="Редактировать профиль">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m4.144 16.735l.493-3.425a.97.97 0 0 1 .293-.587l9.665-9.664a1.03 1.03 0 0 1 .973-.281a5.1 5.1 0 0 1 2.346 1.372a5.1 5.1 0 0 1 1.384 2.346a1.07 1.07 0 0 1-.282.973l-9.664 9.664a1.17 1.17 0 0 1-.598.294l-3.437.492a1.044 1.044 0 0 1-1.173-1.184m8.633-11.846l4.41 4.398M3.79 21.25h16.42"/>
-      </svg>
-    </a>
-    {% endif %}
-    {{ user_avatar(user, 'xl') }}
-    {% if is_investor_profile %}
-    <h1>{{ user.name }}</h1>
-    <p class="profile-type">Инвестор</p>
-    {% else %}
-    <p class="eyebrow">{{ user.role|user_role }}</p>
-    <h1>{{ user.name }}</h1>
-    <div class="profile-stats">
-      <span><b>{{ user.score or 0 }}</b> XP</span>
-      <span><b>{{ user.experience_years or 0 }}</b> лет опыта</span>
-      <span><b>{{ user.streak or 0 }}</b> streak</span>
-    </div>
-    {% endif %}
-  </header>
-
-  {% if is_own_profile %}
-  <div class="profile-actions stack">
-    <a class="btn btn-ghost" href="{{ url_for('extensions.messages_inbox') }}">Сообщения</a>
-    <form method="post" action="{{ url_for('extensions.set_locale') }}" class="locale-switch">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <select name="locale" class="input" onchange="this.form.submit()">
-        {% for code, label in supported_locales.items() %}
-        <option value="{{ code }}" {% if current_locale == code %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </form>
-  </div>
-  {% elif not is_investor_profile and user.open_for_messages %}
-  <a class="btn btn-ghost" href="{{ url_for('extensions.messages_thread', other_id=user.id) }}">Написать</a>
-  {% endif %}
-
-  <section class="profile-section">
-    <div class="profile-section__head">
-      <h2>{% if is_own_profile %}Мои проекты{% else %}Проекты{% endif %}</h2>
-      {% if my_startups %}
-      <span class="profile-section__count">{{ my_startups|length }}</span>
+  <div class="ig-profile-hero">
+  <div class="ig-header">
+    <div class="ig-header__avatar">
+      {{ user_avatar(user, 'xl') }}
+      {% if not is_investor_profile %}
+      <span class="profile-streak ig-streak" tabindex="0">
+        <svg class="profile-streak__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="profileStreakFlame" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#ffe08a"/>
+              <stop offset=".45" stop-color="#ff9a3c"/>
+              <stop offset="1" stop-color="#ff4d1a"/>
+            </linearGradient>
+          </defs>
+          <path class="profile-streak__flame" d="M12 22c4.8-3.2 8-7.4 8-12.2C20 6.8 16.6 3.8 12 2 7.4 3.8 4 6.8 4 9.8 4 14.6 7.2 18.8 12 22Z"/>
+          <path class="profile-streak__flame-core" d="M12 19.2c2.6-2 4.2-4.6 4.2-7.4 0-2.4-1.8-4.4-4.2-5.7-2.4 1.3-4.2 3.3-4.2 5.7 0 2.8 1.6 5.4 4.2 7.4Z"/>
+        </svg>
+        <strong>{{ streak_n }}</strong>
+        <span class="profile-streak__tip" role="tooltip">
+          {% if is_own_profile %}
+          {{ 'profile.streak_tip_own'|t }}
+          {% else %}
+          {{ 'profile.streak_tip_other'|t }}
+          {% endif %}
+          <strong>{% if is_own_profile %}{{ 'profile.streak_yours'|t }}{% else %}{{ 'profile.streak_label'|t }}{% endif %}: {{ streak_n }} {{ streak_n|streak_days }}</strong>
+        </span>
+      </span>
       {% endif %}
     </div>
-    {% if my_startups %}
+    <div class="ig-header__stats" role="list">
+      <a class="ig-stat" role="listitem" href="{{ profile_tab_url }}?tab=projects">
+        <strong>{{ projects_count }}</strong>
+        <span>{% if is_investor_profile %}{{ 'profile.stat.favorites'|t }}{% else %}{{ 'profile.stat.projects'|t }}{% endif %}</span>
+      </a>
+      {% if not is_investor_profile %}
+      {% if is_own_profile and team %}
+      <a class="ig-stat" role="listitem" href="{{ profile_tab_url }}?tab=team">
+        <strong>{{ team_count|default(team.members|length if team.members is defined else 0) }}</strong>
+        <span>{{ 'profile.stat.team'|t }}</span>
+      </a>
+      {% else %}
+      <div class="ig-stat" role="listitem">
+        <strong>{{ team_count|default(0) }}</strong>
+        <span>{{ 'profile.stat.team'|t }}</span>
+      </div>
+      {% endif %}
+      {% endif %}
+      {% if not hide_achievements|default(false) %}
+      <a class="ig-stat" role="listitem" href="{{ profile_tab_url }}?tab=achievements">
+        <strong>{{ achievements.earned|default(0) }}</strong>
+        <span>{{ 'profile.stat.achievements'|t }}</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="ig-bio">
+    <strong class="ig-bio__name">{{ user.name }}</strong>
+    {% from "components/_role_icon.html" import role_chip %}
+    {% if is_investor_profile %}
+    {{ role_chip('Инвестор', 'ig-bio__role') }}
+    {% else %}
+    {{ role_chip(user.role, 'ig-bio__role') }}
+    {% endif %}
+  </div>
+
+  {% if is_own_profile %}
+  <div class="ig-actions">
+    <a class="ig-btn ig-btn--primary" href="{{ url_for('main.profile_edit') }}">{{ 'settings.edit_profile'|t }}</a>
+  </div>
+  {% elif session_user and user.open_for_messages %}
+  <div class="ig-actions">
+    <a class="ig-btn ig-btn--primary" href="{{ url_for('extensions.messages_thread', other_id=user.id) }}">{{ 'profile.message'|t }}</a>
+  </div>
+  {% endif %}
+  </div>
+
+  <nav class="ig-tabs" aria-label="{{ 'nav.profile'|t }}">
+    <a class="ig-tab{% if profile_tab == 'projects' %} is-active{% endif %}"
+       href="{{ profile_tab_url }}?tab=projects"
+       title="{{ 'profile.tab.projects'|t }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>{{ 'profile.tab.projects'|t }}</span>
+    </a>
+    {% if is_own_profile and team and not is_investor_profile %}
+    <a class="ig-tab{% if profile_tab == 'team' %} is-active{% endif %}"
+       href="{{ profile_tab_url }}?tab=team"
+       title="{{ 'profile.tab.team'|t }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>{{ 'profile.tab.team'|t }}</span>
+      {% if team.incoming_count %}<i class="ig-tab__dot" aria-hidden="true"></i>{% endif %}
+    </a>
+    {% endif %}
+    {% if not hide_achievements|default(false) %}
+    <a class="ig-tab{% if profile_tab == 'achievements' %} is-active{% endif %}"
+       href="{{ profile_tab_url }}?tab=achievements"
+       title="{{ 'profile.tab.achievements'|t }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M5 8H4a2 2 0 0 1 0-4h3"/><path d="M19 8h1a2 2 0 0 0 0-4h-3"/></svg>
+      <span>{{ 'profile.tab.achievements'|t }}</span>
+      {% if achievements.earned %}<em class="ig-tab__count">{{ achievements.earned }}</em>{% endif %}
+    </a>
+    {% endif %}
+  </nav>
+
+  {% if profile_tab == 'projects' %}
+  <section class="profile-section">
+    {% if projects_private|default(false) %}
+    <article class="profile-empty">
+      <strong>Проекты скрыты</strong>
+      <p>Пользователь закрыл список проектов.</p>
+    </article>
+    {% elif my_startups %}
     <div class="startup-list profile-startup-list">
       {% for startup in my_startups %}
         {% if is_investor_user and not is_own_profile %}
@@ -72,21 +151,14 @@
     </div>
     {% else %}
     <article class="profile-empty">
-      <strong>{% if is_investor_profile and is_own_profile %}Нет избранных кандидатов{% elif is_own_profile %}Нет проектов{% else %}Проектов пока нет{% endif %}</strong>
-      <p>{% if is_investor_profile and is_own_profile %}Отмечайте интересных основателей в разделе «Кандидаты».{% elif is_own_profile %}После создания стартапа он появится здесь.{% else %}У этого пользователя пока нет стартапов на платформе.{% endif %}</p>
+      <strong>{% if is_investor_profile and is_own_profile %}Нет избранных кандидатов{% elif is_own_profile %}{{ 'profile.no_projects_own'|t }}{% else %}{{ 'profile.no_projects_other'|t }}{% endif %}</strong>
+      <p>{% if is_investor_profile and is_own_profile %}Отмечайте интересных основателей в разделе «Кандидаты».{% elif is_own_profile %}{{ 'profile.no_projects_hint_own'|t }}{% else %}{{ 'profile.no_projects_hint_other'|t }}{% endif %}</p>
     </article>
     {% endif %}
   </section>
 
-  {% if is_own_profile and team and not is_investor_profile %}
+  {% elif profile_tab == 'team' and is_own_profile and team and not is_investor_profile %}
   <section class="profile-section">
-    <div class="profile-section__head">
-      <h2>Моя команда</h2>
-      {% if team.incoming_count %}
-      <span class="profile-section__badge">{{ team.incoming_count }} нов.</span>
-      {% endif %}
-    </div>
-
     <div class="profile-team-card">
       {% if team.incoming_invites %}
       <div class="profile-team-card__group">
@@ -100,28 +172,23 @@
               <span class="team-invite-card__progress">{{ preview.progress.done }}/{{ preview.progress.total }} · {{ preview.progress.percent }}%</span>
               <span class="team-invite-card__step">Сейчас: {{ preview.current_step_label }}</span>
             </div>
-            <span class="team-invite-card__cta">Профиль команды →</span>
+            <span class="team-invite-card__cta">Открыть →</span>
           </a>
           {% endfor %}
         </div>
       </div>
       {% endif %}
 
-      {% if team.primary_startup and team.members %}
+      {% if team.primary_startup and team.member_rows %}
       <div class="profile-team-card__group">
-        <p class="profile-team-card__label">Участники</p>
-        <p class="profile-team-card__hint">{{ team.primary_startup.name }}</p>
+        <p class="profile-team-card__label">Участники · {{ team.primary_startup.name }}</p>
         <ul class="team-members">
-          {% for member in team.members %}
+          {% for row in team.member_rows|default([]) %}
           <li class="team-member">
-            {{ user_avatar(member, 'mini') }}
+            {{ user_avatar(row.user, 'mini') }}
             <div class="team-member__info">
-              <strong>{{ member.name }}</strong>
-              {% if member.id == team.primary_startup.owner_id %}
-              <span class="team-member__role">Основатель</span>
-              {% else %}
-              <span class="team-member__role">Участник</span>
-              {% endif %}
+              <strong>{{ row.user.name }}</strong>
+              <span class="team-member__role">{{ row.role_label }}</span>
             </div>
           </li>
           {% endfor %}
@@ -136,7 +203,16 @@
           {% for invite in team.sent_invites %}
           <li class="team-pending__item">
             <strong>{{ invite.invitee.name }}</strong>
-            <span>отправлено</span>
+            <span class="team-pending__wait" title="Ожидаем ответ">
+              <i class="team-pending__wait-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M12 7v5l3 2"/>
+                </svg>
+              </i>
+              <span class="team-pending__wait-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              отправлено
+            </span>
           </li>
           {% endfor %}
         </ul>
@@ -167,15 +243,12 @@
       {% endif %}
     </div>
   </section>
-  {% endif %}
 
-  {% if is_own_profile %}
-  <footer class="profile-footer">
-    <form method="post" action="{{ url_for('auth.logout') }}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <button class="btn btn-ghost full profile-logout" type="submit">Выйти</button>
-    </form>
-  </footer>
+  {% elif profile_tab == 'achievements' %}
+  {% include "partials/profile_achievements.html" %}
+
+  {% elif profile_tab == 'settings' and is_own_profile %}
+  {% include "partials/profile_settings.html" %}
   {% endif %}
 </section>
 {% endblock %}

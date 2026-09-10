@@ -1,0 +1,74 @@
+{% if analysis and not embed|default(false) %}
+{% with attach=attach or analysis.attach, filename=analysis.filename or filename %}
+  {% include "partials/chat_file_attach.html" %}
+{% endwith %}
+<div class="chat-msg chat-msg-ai">
+  <div class="chat-msg__bubble">
+    {% set score = (analysis.score if analysis.score is not none else 0)|int %}
+    {% if score >= 66 %}
+    <p>Вот разбор по «{{ startup.name }}» исходя из презы: дек уже довольно сильный. Ниже — оценка и главные дыры, которые лучше закрыть.</p>
+    {% elif score >= 46 %}
+    <p>Вот разбор по «{{ startup.name }}» исходя из презы: есть база, но дек ещё сырой. Ниже — оценка и главные дыры, которые лучше закрыть.</p>
+    {% else %}
+    <p>Вот разбор по «{{ startup.name }}» исходя из презы: преза пока слабая. Ниже — оценка и главные дыры, которые лучше закрыть.</p>
+    {% endif %}
+  </div>
+</div>
+{% elif not analysis and filename and not embed|default(false) %}
+{% with attach=attach, filename=filename %}
+  {% include "partials/chat_file_attach.html" %}
+{% endwith %}
+{% endif %}
+
+{% if analysis %}
+{% set score = (analysis.score if analysis.score is not none else 0)|int %}
+{% set verdict = 'сильный' if score >= 66 else 'нормальный' if score >= 46 else 'слабый' %}
+{% set ready = score >= 60 %}
+{% set tone = 'good' if score >= 66 else 'mid' if score >= 46 else 'weak' %}
+<article class="chat-pitch-card chat-pitch-card--{{ tone }}" data-pitch-card>
+  <header class="chat-pitch-card__hero">
+    <div class="chat-pitch-card__score" style="--score: {{ score }}">
+      <span class="chat-pitch-card__score-glow" aria-hidden="true"></span>
+      <span class="chat-pitch-card__score-ring" aria-hidden="true"></span>
+      <strong>{{ score }}</strong>
+      <span class="chat-pitch-card__score-max">/100</span>
+    </div>
+    <div class="chat-pitch-card__meta">
+      <p class="chat-pitch-card__verdict">{{ verdict|capitalize }} дек</p>
+      {% if ready %}
+      <span class="chat-pitch-card__badge chat-pitch-card__badge--ready">Можно показывать</span>
+      {% else %}
+      <span class="chat-pitch-card__badge chat-pitch-card__badge--wait">Ещё рано инвестору</span>
+      {% endif %}
+      {% if analysis.delta is not none and analysis.delta != 0 %}
+      <span class="chat-pitch-card__delta {% if analysis.delta > 0 %}is-up{% else %}is-down{% endif %}">
+        {% if analysis.delta > 0 %}+{{ analysis.delta }}{% else %}{{ analysis.delta }}{% endif %}
+      </span>
+      {% endif %}
+    </div>
+  </header>
+  {% if analysis.summary %}
+  <p class="chat-pitch-card__summary">{{ analysis.summary }}</p>
+  {% endif %}
+  {% if analysis.weaknesses %}
+  <section class="chat-pitch-card__issues">
+    <p class="chat-pitch-card__issues-label">Что поправить</p>
+    <ul class="chat-pitch-card__list">
+      {% for item in analysis.weaknesses[:3] %}
+      <li>
+        <span class="chat-pitch-card__issue-mark" aria-hidden="true"></span>
+        <span class="chat-pitch-card__issue-text">{{ item }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  {% if startup %}
+  <a class="btn btn-ghost chat-pitch-card__btn" href="{{ url_for('extensions.pitch_analyze', startup_id=startup.id) }}">Полный разбор</a>
+  {% endif %}
+</article>
+{% elif not embed|default(false) %}
+<div class="chat-msg chat-msg-system">
+  <div class="chat-msg__bubble">{{ error or 'Не удалось разобрать презентацию.' }}</div>
+</div>
+{% endif %}

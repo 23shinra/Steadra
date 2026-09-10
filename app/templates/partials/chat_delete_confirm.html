@@ -1,0 +1,28 @@
+<div class="chat-msg chat-msg-user">
+  <div class="chat-msg__bubble">{{ user_message }}</div>
+</div>
+<div class="chat-msg chat-msg-ai">
+  <article class="chat-delete-confirm">
+    <p class="chat-delete-confirm__eyebrow">Удаление проекта</p>
+    <h3 class="chat-delete-confirm__title">Удалить «{{ label }}»?</h3>
+    <p class="chat-delete-confirm__hint">
+      {% if has_startup %}
+      Чат, карта прогресса, файлы и все шаги будут удалены без восстановления.
+      {% else %}
+      Чат и прожарка будут удалены без восстановления. Слот идеи освободится.
+      {% endif %}
+    </p>
+    <form
+      class="chat-delete-confirm__actions"
+      method="post"
+      action="{{ url_for('main.ai_delete_thread') }}"
+      hx-post="{{ url_for('main.ai_delete_thread') }}"
+      hx-swap="none"
+    >
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="thread_id" value="{{ thread.id }}" />
+      <button type="button" class="btn btn-ghost" data-chat-delete-cancel data-thread-id="{{ thread.id }}">Отмена</button>
+      <button type="submit" class="btn btn-danger">Да, удалить</button>
+    </form>
+  </article>
+</div>

@@ -5,6 +5,26 @@ from ..models.entities import Activity, ActivityComment, ActivityLike, ActivityR
 from .idea_poll import poll_bundle, poll_for_activity
 from .team import feed_invite_meta
 
+ACTIVITY_KIND_LABELS = {
+    "post": "Пост",
+    "question": "Вопрос",
+    "poll": "Опрос",
+    "ship": "Запуск",
+    "sale": "Продажа",
+    "roast": "Разбор AI",
+    "team": "Команда",
+    "hiring": "Найм",
+    "cofounder": "Co-founder",
+}
+
+
+def activity_kind_label(kind: str | None) -> str:
+    key = (kind or "").strip()
+    if not key:
+        return ""
+    return ACTIVITY_KIND_LABELS.get(key, key.replace("_", " ").capitalize())
+
+
 
 def startup_for_feed_post(user: User) -> Startup | None:
     startup = (

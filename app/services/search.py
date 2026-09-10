@@ -14,6 +14,7 @@ def search_all(query: str, *, kind: str | None = None, stage: str | None = None,
     users = (
         User.query.filter(
             User.account_type != "investor",
+            User.show_in_search.is_(True),
             or_(User.name.ilike(pattern), User.role.ilike(pattern)),
         )
         .order_by(User.score.desc())

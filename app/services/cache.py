@@ -8,6 +8,22 @@ from flask import current_app
 _redis_client = None
 
 
+def _utc_now():
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc)
+
+
+def _as_utc(dt):
+    from datetime import timezone
+
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def get_redis():
     global _redis_client
     url = current_app.config.get("REDIS_URL", "")
@@ -51,12 +67,11 @@ def cache_get(key: str) -> str | None:
     if client:
         return client.get(key)
     from ..models.entities import CacheEntry
-    from datetime import datetime, timezone
 
     entry = CacheEntry.query.filter_by(key=key).first()
     if not entry:
         return None
-    if entry.expires_at and entry.expires_at < datetime.now(timezone.utc):
+    if entry.expires_at and _as_utc(entry.expires_at) < _utc_now():
         from ..models import db
 
         db.session.delete(entry)
@@ -75,6 +90,45 @@ def cache_delete(key: str) -> None:
 
     CacheEntry.query.filter_by(key=key).delete()
     db.session.commit()
+
+
+def cache_incr(key: str, ttl: int = 300) -> int:
+    """Atomic-ish counter with TTL. Returns new value after increment."""
+    client = get_redis()
+    if client:
+        value = int(client.incr(key))
+        if value == 1:
+            client.expire(key, ttl)
+        return value
+
+    from datetime import datetime, timedelta, timezone
+
+    from ..models import db
+    from ..models.entities import CacheEntry
+
+    now = datetime.now(timezone.utc)
+    entry = CacheEntry.query.filter_by(key=key).first()
+    if entry and entry.expires_at and _as_utc(entry.expires_at) < now:
+        db.session.delete(entry)
+        db.session.commit()
+        entry = None
+    if not entry:
+        entry = CacheEntry(
+            key=key,
+            value="1",
+            expires_at=now + timedelta(seconds=ttl),
+        )
+        db.session.add(entry)
+        db.session.commit()
+        return 1
+    try:
+        value = int(entry.value or "0") + 1
+    except (TypeError, ValueError):
+        value = 1
+    entry.value = str(value)
+    db.session.add(entry)
+    db.session.commit()
+    return value
 
 
 def cache_set_json(key: str, data: Any, ttl: int = 300) -> None:

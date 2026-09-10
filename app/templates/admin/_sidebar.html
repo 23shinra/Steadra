@@ -1,7 +1,10 @@
 <aside class="admin-sidebar" id="admin-sidebar" aria-label="Навигация админки">
   <div class="admin-sidebar__head">
-    <a class="admin-sidebar__logo" href="{{ url_for('admin.dashboard') }}" title="Панель" aria-label="На главную админки">A</a>
-    <strong class="admin-sidebar__title">Kangaroo</strong>
+    <a class="admin-sidebar__logo" href="{{ url_for('admin.dashboard') }}" title="Панель" aria-label="На главную админки">K</a>
+    <div class="admin-sidebar__brand">
+      <p class="admin-sidebar__eyebrow">Admin</p>
+      <strong class="admin-sidebar__title">Kangaroo</strong>
+    </div>
     <button type="button" class="admin-sidebar__collapse" id="admin-sidebar-collapse" title="Свернуть меню" aria-label="Свернуть меню" aria-expanded="true">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -12,7 +15,7 @@
       href="{{ url_for('admin.dashboard') }}"
       title="Панель">
       <span class="admin-sidebar__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M4 4h7v9H4V4zm9 0h7v5h-7V4zM4 15h7v5H4v-5zm9 3h7v7h-7v-7z"/></svg>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
       </span>
       <span class="admin-sidebar__label">Панель</span>
     </a>
@@ -35,6 +38,15 @@
       </span>
       <span class="admin-sidebar__label">ТОО</span>
       {% if pending_too_count %}<span class="admin-sidebar__badge">{{ pending_too_count }}</span>{% endif %}
+    </a>
+
+    <a class="admin-sidebar__item{% if admin_nav == 'partners' %} is-active{% endif %}"
+      href="{{ url_for('admin.partners_page') }}"
+      title="Партнёры">
+      <span class="admin-sidebar__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </span>
+      <span class="admin-sidebar__label">Партнёры</span>
     </a>
   </nav>
 
